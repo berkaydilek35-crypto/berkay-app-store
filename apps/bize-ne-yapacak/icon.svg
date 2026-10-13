@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <pattern id="hz" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="56" height="56" fill="#000"/><rect width="28" height="56" fill="#FFE600"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" fill="#E10600"/>
+  <rect y="428" width="512" height="84" fill="url(#hz)"/>
+  <text x="270" y="372" text-anchor="middle" font-family="Anton, Impact, 'Arial Black', 'DejaVu Sans', sans-serif" font-weight="900" font-size="360" fill="#FFE600">?!</text>
+  <text x="256" y="358" text-anchor="middle" font-family="Anton, Impact, 'Arial Black', 'DejaVu Sans', sans-serif" font-weight="900" font-size="360" fill="#fff">?!</text>
+</svg>

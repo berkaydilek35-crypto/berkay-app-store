@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Uygulama — Berkay Yapıyor</title>
+<meta name="description" content="Berkay Dilek'in yapıp sahada test ettiği bir uygulama.">
+<meta name="theme-color" content="#F4F1E9">
+<meta property="og:title" content="Berkay Yapıyor">
+<meta property="og:description" content="Aklıma gelen fikirleri yapıp gerçekten deniyorum.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="wrap" id="page">
+  <header class="top">
+    <a class="mark" href="./"><i></i>Berkay Yapıyor</a>
+    <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
+  </header>
+  <a class="back" href="./#katalog">← Tüm uygulamalar</a>
+  <main id="detail"><p class="loading-note">Yükleniyor…</p></main>
+  <footer>
+    <span>© 2026 Berkay Dilek</span>
+    <span>İzmir'de yapıldı, sahada test edildi.</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/site.js"></script>
+<script>
+(async function () {
+  var B = window.BK, el = document.getElementById('detail');
+  var slug = new URLSearchParams(location.search).get('a') || '';
+  var apps = await B.getApps();
+  var a = apps.find(function (x) { return x.slug === slug; });
+
+  if (!a) {
+    document.title = 'Uygulama bulunamadı — Berkay Yapıyor';
+    el.innerHTML = '<div class="d-head"><h1>Bu uygulama burada yok.</h1><p class="lead">Adres değişmiş ya da uygulama kaldırılmış olabilir. Katalogdan güncel listeye bakabilirsin.</p><div class="d-actions"><a class="btn signal" href="./#katalog">Kataloğa dön</a></div></div>';
+    return;
+  }
+
+  document.title = a.title + ' — Berkay Yapıyor';
+  var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', a.tagline);
+
+  function fact(title, text, cls) {
+    return text ? '<section class="fact ' + (cls || '') + '"><h2>' + title + '</h2><p>' + B.esc(text) + '</p></section>' : '';
+  }
+  function videoHTML(url) {
+    if (!url) return '';
+    var yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{6,})/);
+    if (yt) return '<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/' + yt[1] + '" title="Demo videosu" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>';
+    if (/\.(mp4|webm|mov)(\?|$)/i.test(url) || /video\.wixstatic\.com/.test(url)) return '<div class="video"><video class="v" src="' + B.esc(url) + '" controls playsinline preload="metadata"></video></div>';
+    return '<a class="btn ghost" href="' + B.esc(url) + '" target="_blank" rel="noopener">Demo videosunu izle</a>';
+  }
+
+  var internal = B.canOpen(a) && B.isInternal(a.appUrl);
+  var side = '';
+  if (internal) {
+    side = '<div class="side-col"><div class="phone" id="phone">' +
+      '<div class="ph-cta"><span class="pn">' + B.numLabel(a.testNumber) + '</span><button type="button" class="btn signal small" id="prev">Canlı önizlemeyi aç</button></div>' +
+      '</div><p class="side-note">Önizleme gerçek uygulamanın kendisi. Tam ekran için "Uygulamayı Aç".</p></div>';
+  } else {
+    side = '<div class="side-col"><a class="cover" href="' + B.esc(a.appUrl || '#') + '"' + (a.appUrl && !B.isInternal(a.appUrl) ? ' target="_blank" rel="noopener"' : '') + '>' + B.coverHTML(a, 720, 900) + '</a></div>';
+  }
+
+  var shots = a.screens.length ? '<section class="fact"><h2>Ekran görüntüleri</h2><div class="shots">' +
+    a.screens.map(function (s, i) { return '<img src="' + B.esc(B.imgSrc(s, 600, 1200)) + '" alt="' + B.esc(a.title) + ' ekran görüntüsü ' + (i + 1) + '" loading="lazy">'; }).join('') +
+    '</div></section>' : '';
+  var demo = a.demo ? '<section class="fact"><h2>Demo</h2>' + videoHTML(a.demo) + '</section>' : '';
+  var ig = a.ig ? '<section class="fact"><h2>Saha Testi videosu</h2><p><a class="link" href="' + B.esc(a.ig) + '" target="_blank" rel="noopener">Bu testi Instagram\'da izle</a></p></section>' : '';
+  var date = B.formatDate(a.date);
+
+  el.innerHTML =
+    '<div class="d-head">' +
+      '<div class="meta">' + (a.testNumber ? '<span class="numtag">' + B.testLabel(a.testNumber) + '</span>' : '') + B.statusChip(a).replace('class="status', 'class="tag status') + (a.category ? '<span class="tag">' + B.esc(a.category) + '</span>' : '') + '</div>' +
+      '<h1>' + B.esc(a.title) + '</h1>' +
+      '<p class="lead">' + B.esc(a.tagline) + '</p>' +
+      '<div class="d-actions">' + B.openButton(a, 'signal') + '<button type="button" class="btn ghost" id="share">Paylaş</button></div>' +
+    '</div>' +
+    '<div class="d-body">' +
+      '<div class="facts">' +
+        fact('Ne işe yarıyor?', a.description) +
+        fact('Kimin için?', a.audience) +
+        fact('Saha notu', a.testNote, 'note') +
+        shots + demo + ig +
+        (date ? '<p class="side-note">Yayın tarihi: ' + date + '</p>' : '') +
+      '</div>' + side +
+    '</div>';
+
+  if (B.canOpen(a)) {
+    document.getElementById('page').classList.add('has-sticky');
+    var st = document.createElement('div'); st.className = 'sticky'; st.innerHTML = B.openButton(a, 'signal');
+    document.body.appendChild(st);
+  }
+
+  var prev = document.getElementById('prev');
+  function loadPreview() {
+    var ph = document.getElementById('phone'); if (!ph || ph.querySelector('iframe')) return;
+    var f = document.createElement('iframe');
+    f.src = a.appUrl; f.title = a.title + ' canlı önizleme'; f.loading = 'lazy';
+    f.setAttribute('allow', 'autoplay; clipboard-write; web-share');
+    ph.innerHTML = ''; ph.appendChild(f);
+  }
+  if (prev) {
+    prev.addEventListener('click', loadPreview);
+    if (window.matchMedia('(min-width: 900px)').matches) loadPreview();
+  }
+
+  var toast = document.getElementById('toast'), tt;
+  function say(m) { toast.textContent = m; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { toast.classList.remove('show'); }, 2200); }
+  document.getElementById('share').addEventListener('click', async function () {
+    var data = { title: a.title, text: a.tagline, url: location.href };
+    try { if (navigator.share) { await navigator.share(data); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(location.href); say('Bağlantı kopyalandı'); } catch (e) { say(location.href); }
+  });
+})();
+</script>
+</body>
+</html>
