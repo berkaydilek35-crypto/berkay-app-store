@@ -14,6 +14,8 @@
     tagline: 'Korktuğun şeyi yaz, başına geleceği kart ve video olarak izle.',
     category: 'Eğlence', status: 'Canlı', testNumber: 1, appUrl: '/apps/bize-ne-yapacak/index.html',
     featuredOrder: 1, publishDate: '2026-10-13T00:00:00.000Z',
+    coverImage: '/assets/apps/bize-ne-yapacak/cover.jpg',
+    screenshots: ['/assets/apps/bize-ne-yapacak/ekran-1-kart.jpg', '/assets/apps/bize-ne-yapacak/ekran-2-giris.jpg', '/assets/apps/bize-ne-yapacak/ekran-3-video.jpg'],
     description: 'Maç, patron, hoca, anne, sevgili, ev sahibi… "Bize ne yapacak?" diye kafana takılan şeyi yazıyorsun. Uygulama derdinin konusunu ve rakibini tanıyıp abartılı, komik bir kötü son kuruyor; bunu paylaşılabilir bir karta ve sesli, 17 saniyelik dikey bir videoya dönüştürüyor.',
     audience: 'Derdine gülmek ve bunu hikâye ya da Reels olarak paylaşmak isteyen herkes.',
     testNote: "Saha Testi 001, ilk sürüm. Tamamen tarayıcıda çalışıyor: yazdığın metin cihazından çıkmıyor, kayıt ya da hesap yok. Video telefonda/bilgisayarda üretilip indiriliyor. Masaüstü Chrome'da uçtan uca test edildi; telefon testleri sahada sürüyor."
@@ -56,11 +58,11 @@
     var m = v.match(/^https:\/\/static\.wixstatic\.com\/media\/([^/?#]+)/);
     return m ? m[1] : '';
   }
-  function imgSrc(value, w, h) {
+  function imgSrc(value, w, h, mode) {
     var v = rawOf(value);
     if (!v) return '';
     var f = fileOf(v);
-    return f ? STATIC + '/' + f + '/v1/fill/w_' + w + ',h_' + h + ',al_c,q_85/' + f : v;
+    return f ? STATIC + '/' + f + '/v1/' + (mode || 'fill') + '/w_' + w + ',h_' + h + ',al_c,q_85/' + f : v;
   }
   function dateOf(v) { if (!v) return ''; if (typeof v === 'object' && v.$date) return v.$date; return String(v); }
 
@@ -143,7 +145,7 @@
     var inner = app.cover
       ? '<img src="' + esc(imgSrc(app.cover, w, h)) + '" alt="' + esc(app.title) + ' kapak görseli" loading="lazy" decoding="async">'
       : '<div class="poster" aria-hidden="true"><span class="pn">' + numLabel(app.testNumber) + '</span><span class="pt">' + esc(app.title) + '</span><span class="pl"></span></div>';
-    return inner + (app.testNumber ? '<span class="badge">' + testLabel(app.testNumber) + '</span>' : '') + statusChip(app);
+    return inner + (app.testNumber ? '<span class="badge">' + numLabel(app.testNumber) + '</span>' : '') + statusChip(app);
   }
   function formatDate(iso) {
     if (!iso) return '';

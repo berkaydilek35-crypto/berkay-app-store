@@ -68,7 +68,7 @@
   }
 
   var shots = a.screens.length ? '<section class="fact"><h2>Ekran görüntüleri</h2><div class="shots">' +
-    a.screens.map(function (s, i) { return '<img src="' + B.esc(B.imgSrc(s, 600, 1200)) + '" alt="' + B.esc(a.title) + ' ekran görüntüsü ' + (i + 1) + '" loading="lazy">'; }).join('') +
+    a.screens.map(function (s, i) { return '<img src="' + B.esc(B.imgSrc(s, 600, 1300, 'fit')) + '" alt="' + B.esc(a.title) + ' ekran görüntüsü ' + (i + 1) + '" loading="lazy">'; }).join('') +
     '</div></section>' : '';
   var demo = a.demo ? '<section class="fact"><h2>Demo</h2>' + videoHTML(a.demo) + '</section>' : '';
   var ig = a.ig ? '<section class="fact"><h2>Saha Testi videosu</h2><p><a class="link" href="' + B.esc(a.ig) + '" target="_blank" rel="noopener">Bu testi Instagram\'da izle</a></p></section>' : '';
