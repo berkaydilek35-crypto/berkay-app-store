@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Uygulama — Berkay Yapıyor</title>
+<title>Uygulama — Berkay Napıyor?</title>
 <meta name="description" content="Berkay Dilek'in yapıp sahada test ettiği bir uygulama.">
 <meta name="theme-color" content="#F4F1E9">
-<meta property="og:title" content="Berkay Yapıyor">
+<meta property="og:title" content="Berkay Napıyor?">
 <meta property="og:description" content="Aklıma gelen fikirleri yapıp gerçekten deniyorum.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +17,7 @@
 <body>
 <div class="wrap" id="page">
   <header class="top">
-    <a class="mark" href="./"><i></i>Berkay Yapıyor</a>
+    <a class="mark" href="./"><i></i>Berkay Napıyor?</a>
     <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
   </header>
   <a class="back" href="./#katalog">← Tüm uygulamalar</a>
@@ -39,12 +39,12 @@
   var a = apps.find(function (x) { return x.slug === slug; });
 
   if (!a) {
-    document.title = 'Uygulama bulunamadı — Berkay Yapıyor';
+    document.title = 'Uygulama bulunamadı — Berkay Napıyor?';
     el.innerHTML = '<div class="d-head"><h1>Bu uygulama burada yok.</h1><p class="lead">Adres değişmiş ya da uygulama kaldırılmış olabilir. Katalogdan güncel listeye bakabilirsin.</p><div class="d-actions"><a class="btn signal" href="./#katalog">Kataloğa dön</a></div></div>';
     return;
   }
 
-  document.title = a.title + ' — Berkay Yapıyor';
+  document.title = a.title + ' — Berkay Napıyor?';
   var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', a.tagline);
 
   function fact(title, text, cls) {
