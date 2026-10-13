@@ -1,6 +1,6 @@
 {
-  "name": "Bize Ne Yapacak?",
-  "short_name": "Ne Yapacak?",
+  "name": "Acaba?",
+  "short_name": "Acaba?",
   "description": "Korktuğun şeyi yaz, başına geleceği kart ve video olarak izle.",
   "lang": "tr",
   "start_url": "./index.html",

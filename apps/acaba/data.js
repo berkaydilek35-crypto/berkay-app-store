@@ -1,14 +1,14 @@
 /* =========================================================
-   BİZE NE YAPACAK?  —  açık kaynak (MIT)
+   ACABA?  —  açık kaynak (MIT)
    Tek dosya. Sunucu yok. Görsel ve video tarayıcıda üretilir.
    ========================================================= */
 
 /* ---------- 1) KENDİNE GÖRE DÜZENLE ---------- */
 const CONFIG = {
   site: 'berkay.instaassist.tr',        // video ve kartta görünen adres
-  sourceUrl: '',                         // "Kaynak kodu" butonu (boşsa gizlenir)
+  sourceUrl: '/downloads/acaba.zip',    // "Uygulamayı indir" butonu (boşsa gizlenir)
   hubUrl: '/',                           // Berkay'ın uygulamaları sayfası
-  brand: 'BİZE NE YAPACAK?'
+  brand: 'ACABA?'
 };
 
 /* ---------- 2) YARDIMCILAR ---------- */

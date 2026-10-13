@@ -11,7 +11,7 @@ const PROVIDERS = {
 };
 const DEFAULT_SETTINGS = {mode:'offline', provider:'pollinations', key:'', model:'', base:'', aiImages:true, imgKey:'', imgModel:''};
 
-const SYS = `Sen "Bize Ne Yapacak?" adlı mizah uygulamasının senaryo yazarısın. Kullanıcı bir endişesini yazar ("X bize ne yapacak?"). Sen bunun abartılı, absürt, komik "kötü sonunu" Türkçe yazarsın.
+const SYS = `Sen "Acaba?" adlı mizah uygulamasının senaryo yazarısın. Kullanıcı aklına takılan bir "acaba"yı yazar (ör. "X bize ne yapacak?", "şunu yapsam ne olur?"). Sen bunun abartılı, absürt, komik "kötü sonunu" Türkçe yazarsın.
 Kurallar:
 - Ton: slapstick, sevimli felaket, Türk mizahı. Asla aşağılayıcı, nefret içeren, cinsel, gerçek şiddet ya da kendine zarar içeren içerik yazma. Kişileri değil durumu tiye al.
 - Kısa ve vurucu: her sahne en fazla 130 karakter, kehanet en fazla 110 karakter.
@@ -277,9 +277,9 @@ function frameIntro(ctx,d,lt){
   if(tp>0){
     const s = 2.3 - 1.3*ease.back(tp);
     ctx.save(); ctx.translate(W/2, 640); ctx.scale(s,s); ctx.rotate(-0.035); ctx.globalAlpha=clamp(tp*3);
-    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=font(fit(ctx,'NE YAPACAK?',960,1,210,110,FH).px,FH);
-    ctx.fillStyle=C.yellow; ctx.fillText('NE YAPACAK?', 9, 9);
-    ctx.fillStyle='#000'; ctx.fillText('NE YAPACAK?', 0, 0);
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=font(fit(ctx,'ACABA?',960,1,210,110,FH).px,FH);
+    ctx.fillStyle=C.yellow; ctx.fillText('ACABA?', 9, 9);
+    ctx.fillStyle='#000'; ctx.fillText('ACABA?', 0, 0);
     ctx.restore();
   }
   const qp = clamp((lt-0.7)/0.95);
@@ -543,7 +543,7 @@ async function fontsReady(){
 async function run(reroll){
   if(state.busy) return;
   const text = (reroll ? state.lastText : $('#q').value).trim();
-  if(!text){ const q=$('#q'); q.classList.remove('shake'); void q.offsetWidth; q.classList.add('shake'); q.focus(); toast('Önce derdini yaz.'); return; }
+  if(!text){ const q=$('#q'); q.classList.remove('shake'); void q.offsetWidth; q.classList.add('shake'); q.focus(); toast('Önce aklındakini yaz.'); return; }
   state.lastText = text; state.busy = true;
   sfx.ensure();
   playToken++;
@@ -597,8 +597,8 @@ async function share(){
   const d=state.data; if(!d) return;
   const text = `“${d.soru}”\n${d.kehanet}\nSen de sor: ${CONFIG.site}`;
   const files=[];
-  if(state.videoBlob) files.push(new File([state.videoBlob], 'bize-ne-yapacak.'+state.videoExt, {type:state.videoBlob.type}));
-  else if(state.cardBlob) files.push(new File([state.cardBlob], 'bize-ne-yapacak.png', {type:'image/png'}));
+  if(state.videoBlob) files.push(new File([state.videoBlob], 'acaba.'+state.videoExt, {type:state.videoBlob.type}));
+  else if(state.cardBlob) files.push(new File([state.cardBlob], 'acaba.png', {type:'image/png'}));
   try{
     if(files.length && navigator.canShare && navigator.canShare({files})){ await navigator.share({files, text}); return; }
     if(navigator.share){ await navigator.share({text}); return; }
@@ -671,8 +671,8 @@ $('#q').addEventListener('input', updateCount);
 $('#q').addEventListener('keydown', e => { if(e.key==='Enter' && (e.metaKey||e.ctrlKey)) run(false); });
 $('#rerollBtn').onclick = () => run(true);
 $('#newBtn').onclick = () => { playToken++; if(window.speechSynthesis) window.speechSynthesis.cancel(); $('#vid').pause(); showScreen('home'); $('#q').focus(); };
-$('#dlVideo').onclick = () => { if(state.videoBlob) download(state.videoBlob, 'bize-ne-yapacak-'+slug(state.data.soru)+'.'+state.videoExt); };
-$('#dlCard').onclick = () => { if(state.cardBlob) download(state.cardBlob, 'bize-ne-yapacak-'+slug(state.data.soru)+'.png'); };
+$('#dlVideo').onclick = () => { if(state.videoBlob) download(state.videoBlob, 'acaba-'+slug(state.data.soru)+'.'+state.videoExt); };
+$('#dlCard').onclick = () => { if(state.cardBlob) download(state.cardBlob, 'acaba-'+slug(state.data.soru)+'.png'); };
 $('#shareBtn').onclick = share;
 $('#speakBtn').onclick = speak;
 if(CONFIG.sourceUrl) $('#sourceLink').href = CONFIG.sourceUrl; else $('#sourceLink').hidden = true;

@@ -10,15 +10,15 @@
 
   // CMS'e ulaşılamazsa sayfa boş kalmasın diye yedek kayıt (CMS'tekiyle aynı içerik)
   var FALLBACK = [{
-    title: 'Bize Ne Yapacak?', slug: 'bize-ne-yapacak',
-    tagline: 'Korktuğun şeyi yaz, başına geleceği kart ve video olarak izle.',
-    category: 'Eğlence', status: 'Canlı', testNumber: 1, appUrl: '/apps/bize-ne-yapacak/index.html',
+    title: 'Acaba?', slug: 'acaba',
+    tagline: 'Acaba dediğin her şeyin en enteresan cevabı.',
+    category: 'Eğlence', status: 'Canlı', testNumber: 1, appUrl: '/apps/acaba/index.html', downloadUrl: '/downloads/acaba.zip',
     featuredOrder: 1, publishDate: '2026-10-13T00:00:00.000Z',
-    coverImage: '/assets/apps/bize-ne-yapacak/cover.jpg',
-    screenshots: ['/assets/apps/bize-ne-yapacak/ekran-1-kart.jpg', '/assets/apps/bize-ne-yapacak/ekran-2-giris.jpg', '/assets/apps/bize-ne-yapacak/ekran-3-video.jpg'],
-    description: 'Maç, patron, hoca, anne, sevgili, ev sahibi… "Bize ne yapacak?" diye kafana takılan şeyi yazıyorsun. Uygulama derdinin konusunu ve rakibini tanıyıp abartılı, komik bir kötü son kuruyor; bunu paylaşılabilir bir karta ve sesli, 17 saniyelik dikey bir videoya dönüştürüyor.',
-    audience: 'Derdine gülmek ve bunu hikâye ya da Reels olarak paylaşmak isteyen herkes.',
-    testNote: "Saha Testi 001, ilk sürüm. Tamamen tarayıcıda çalışıyor: yazdığın metin cihazından çıkmıyor, kayıt ya da hesap yok. Video telefonda/bilgisayarda üretilip indiriliyor. Masaüstü Chrome'da uçtan uca test edildi; telefon testleri sahada sürüyor."
+    coverImage: '/assets/apps/acaba/cover.jpg',
+    screenshots: ['/assets/apps/acaba/ekran-1-kart.jpg', '/assets/apps/acaba/ekran-2-giris.jpg', '/assets/apps/acaba/ekran-3-video.jpg'],
+    description: 'Maç, patron, hoca, anne, sevgili, ev sahibi… Kafana takılan "acaba"yı yazıyorsun. Uygulama konuyu ve rakibini tanıyıp abartılı, komik bir cevap kuruyor; bunu paylaşılabilir bir karta ve sesli, 17 saniyelik dikey bir videoya dönüştürüyor.',
+    audience: 'Aklına takılana gülmek ve bunu hikâye ya da Reels olarak paylaşmak isteyen herkes.',
+    testNote: "Saha Testi 001, ilk sürüm. Tamamen tarayıcıda çalışıyor: yazdığın metin cihazından çıkmıyor, kayıt ya da hesap yok. Video telefonda/bilgisayarda üretilip indiriliyor. ZIP olarak indirip internetsiz de kullanılabiliyor."
   }];
 
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -74,7 +74,7 @@
       testNumber: Number(d.testNumber) || null,
       cover: rawOf(d.coverImage),
       screens: Array.isArray(d.screenshots) ? d.screenshots.map(rawOf).filter(Boolean) : [],
-      appUrl: (d.appUrl || '').trim(), demo: (d.demoVideoUrl || '').trim(), ig: (d.instagramUrl || '').trim(),
+      appUrl: (d.appUrl || '').trim(), download: (d.downloadUrl || '').trim(), demo: (d.demoVideoUrl || '').trim(), ig: (d.instagramUrl || '').trim(),
       date: dateOf(d.publishDate), order: (order === 0 || order) ? Number(order) : null,
       description: d.description || '', audience: d.audience || '', testNote: d.testNote || ''
     };
@@ -137,6 +137,10 @@
     var ext = !isInternal(app.appUrl);
     return '<a class="btn ' + (cls || '') + '" href="' + esc(app.appUrl) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>Uygulamayı Aç</a>';
   }
+  function downloadButton(app, cls) {
+    if (!app.download) return '';
+    return '<a class="btn ghost ' + (cls || '') + '" href="' + esc(app.download) + '" download>İndir</a>';
+  }
   function statusChip(app) {
     if (!app.status) return '';
     return '<span class="status ' + statusKey(app.status) + '">' + esc(app.status) + '</span>';
@@ -155,7 +159,7 @@
 
   window.BK = {
     IG: IG, getApps: getApps, imgSrc: imgSrc, statusKey: statusKey, testLabel: testLabel, numLabel: numLabel,
-    isInternal: isInternal, canOpen: canOpen, esc: esc, detailUrl: detailUrl, openButton: openButton,
+    isInternal: isInternal, canOpen: canOpen, esc: esc, detailUrl: detailUrl, openButton: openButton, downloadButton: downloadButton,
     statusChip: statusChip, coverHTML: coverHTML, formatDate: formatDate, trLower: trLower
   };
 })();

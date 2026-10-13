@@ -76,7 +76,7 @@
         '<h2>' + B.esc(f.title) + '</h2>' +
         '<p class="lead">' + B.esc(f.tagline) + '</p>' +
         '<div class="meta">' + B.statusChip(f).replace('class="status', 'class="tag status') + (f.category ? '<span class="tag">' + B.esc(f.category) + '</span>' : '') + '</div>' +
-        '<div class="actions">' + B.openButton(f, 'signal') + '<a class="link" href="' + B.detailUrl(f) + '">Nasıl yaptım, nasıl test ettim?</a></div>' +
+        '<div class="actions">' + B.openButton(f, 'signal') + B.downloadButton(f) + '<a class="link" href="' + B.detailUrl(f) + '">Nasıl yaptım, nasıl test ettim?</a></div>' +
       '</div>' +
       '<a class="cover" href="' + B.detailUrl(f) + '" aria-label="' + B.esc(f.title) + ' detayları">' + B.coverHTML(f, 960, 1200) + '</a>';
   } else { fe.hidden = true; }
@@ -116,7 +116,7 @@
         '<a class="cover" href="' + B.detailUrl(a) + '" aria-label="' + B.esc(a.title) + ' detayları">' + B.coverHTML(a, 720, 900) + '</a>' +
         '<h3><a href="' + B.detailUrl(a) + '">' + B.esc(a.title) + '</a></h3>' +
         '<p>' + B.esc(a.tagline) + '</p>' +
-        '<div class="row">' + B.openButton(a, 'small') + '<a class="link" href="' + B.detailUrl(a) + '">Detay</a></div>' +
+        '<div class="row">' + B.openButton(a, 'small') + B.downloadButton(a, 'small') + '<a class="link" href="' + B.detailUrl(a) + '">Detay</a></div>' +
       '</article>';
     }).join('');
   }

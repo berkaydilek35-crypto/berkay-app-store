@@ -34,6 +34,7 @@
 (async function () {
   var B = window.BK, el = document.getElementById('detail');
   var slug = new URLSearchParams(location.search).get('a') || '';
+  if (slug === 'bize-ne-yapacak') slug = 'acaba'; // eski adres
   var apps = await B.getApps();
   var a = apps.find(function (x) { return x.slug === slug; });
 
@@ -72,6 +73,10 @@
     '</div></section>' : '';
   var demo = a.demo ? '<section class="fact"><h2>Demo</h2>' + videoHTML(a.demo) + '</section>' : '';
   var ig = a.ig ? '<section class="fact"><h2>Saha Testi videosu</h2><p><a class="link" href="' + B.esc(a.ig) + '" target="_blank" rel="noopener">Bu testi Instagram\'da izle</a></p></section>' : '';
+  var dl = a.download ? '<section class="fact"><h2>İndir, kendin kullan</h2>' +
+    '<p>Uygulamanın tamamı tek bir ZIP dosyası. İndir, aç, içindeki index.html dosyasına çift tıkla; internet olmadan da çalışır. Kod açık (MIT), istersen kendi sitende yayınla.</p>' +
+    '<p style="margin-top:10px">Telefonda en kolayı: uygulamayı aç, tarayıcı menüsünden “Ana ekrana ekle”yi seç; uygulama gibi açılır.</p>' +
+    '<p style="margin-top:14px"><a class="btn small" href="' + B.esc(a.download) + '" download>ZIP olarak indir</a></p></section>' : '';
   var date = B.formatDate(a.date);
 
   el.innerHTML =
@@ -79,14 +84,14 @@
       '<div class="meta">' + (a.testNumber ? '<span class="numtag">' + B.testLabel(a.testNumber) + '</span>' : '') + B.statusChip(a).replace('class="status', 'class="tag status') + (a.category ? '<span class="tag">' + B.esc(a.category) + '</span>' : '') + '</div>' +
       '<h1>' + B.esc(a.title) + '</h1>' +
       '<p class="lead">' + B.esc(a.tagline) + '</p>' +
-      '<div class="d-actions">' + B.openButton(a, 'signal') + '<button type="button" class="btn ghost" id="share">Paylaş</button></div>' +
+      '<div class="d-actions">' + B.openButton(a, 'signal') + B.downloadButton(a) + '<button type="button" class="btn ghost" id="share">Paylaş</button></div>' +
     '</div>' +
     '<div class="d-body">' +
       '<div class="facts">' +
         fact('Ne işe yarıyor?', a.description) +
         fact('Kimin için?', a.audience) +
         fact('Saha notu', a.testNote, 'note') +
-        shots + demo + ig +
+        dl + shots + demo + ig +
         (date ? '<p class="side-note">Yayın tarihi: ' + date + '</p>' : '') +
       '</div>' + side +
     '</div>';
