@@ -596,6 +596,7 @@ const M = {
   reset: 'Sıfırlandın. Sigorta kayıtlarında görünmez. (Görünür.)',
   license: 'Ceza puanın 100\'ü geçti. Gerçek hayatta ehliyetine el konurdu. Burada sadece utanırsın.',
   fallFar: 'Bir yerden düştün ama nereye düştüğün belirsiz. Harita yükleniyor, sen de toparlan.',
+  dropIn: 'Gökten indin. Harita biraz geç yüklendi, sen paraşütle telafi ettin.',
 };
 
 /* =====================================================================
@@ -904,11 +905,12 @@ async function spawnAt(lonDeg, latDeg, hdgDeg, label) {
   } catch (e) { console.warn('sampleHeightMostDetailed', e); }
   const c = S.car;
   if (best) { c.lon = best.lon; c.lat = best.lat; c.h = best.height; c.onGround = true; }
-  else { c.lon = lon; c.lat = lat; c.h = 120; c.onGround = false; toast(M.fallFar, 'warn'); }
+  else { c.lon = lon; c.lat = lat; c.h = Math.max(1500, (S.spotH || 0) + 300); c.onGround = false; S.dropIn = true; }
   c.heading = (hdgDeg || 0) * DEG; c.vE = c.vN = c.vz = 0; c.steer = 0; c.pitch = c.roll = 0;
   S.camHeading = c.heading; S.streetRef = c.h;
   S.lastSpawn = { lonDeg, latDeg, hdgDeg, label };
   S.air = PHYS.impulse; S.flags = {}; S.z96 = null; S.idleT = 0;
+  if (best) S.dropIn = false;
   showLoading(null);
   startDrive();
 }
@@ -1069,6 +1071,9 @@ function step(dt) {
   // ---------- vertical ----------
   const g = groundBelow(c);
   S.ground = g;
+  if (S.dropIn && g !== undefined && g > -500) {          // spawn fallback: lower the car onto the map once it has loaded
+    S.dropIn = false; c.h = g + 25; c.vz = 0; S.streetRef = g; toast(M.dropIn, 'warn');
+  }
   if (c.onGround) {
     if (g !== undefined) {
       if (g > c.h + 2.0 && moved) {           // too steep to climb: it's a wall
@@ -1098,7 +1103,7 @@ function step(dt) {
       void hsL;
     } else {
       c.h = nh;
-      if (g === undefined && c.h < -400) { toast(M.fallFar, 'warn'); respawn(); }
+      if (!S.dropIn && g === undefined && c.h < -400) { toast(M.fallFar, 'warn'); respawn(); }
     }
   }
 
