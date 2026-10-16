@@ -445,16 +445,17 @@ const PHYS = (() => {
 })();
 
 const SPOTS = [
-  { id: 'kordon',    city: 'İzmir',    name: 'Gündoğdu / Kordon',   lat: 38.4358061, lon: 27.1394477, hdg: 27 },
-  { id: 'konak',     city: 'İzmir',    name: 'Konak Saat Kulesi',   lat: 38.4189,    lon: 27.1287,    hdg: 35 },
-  { id: 'kibris',    city: 'İzmir',    name: 'Alsancak Kıbrıs Şehitleri', lat: 38.4373, lon: 27.1436, hdg: 120 },
-  { id: 'kulturpark',city: 'İzmir',    name: 'Kültürpark',          lat: 38.4284811, lon: 27.145345,  hdg: 0 },
-  { id: 'karsiyaka', city: 'İzmir',    name: 'Karşıyaka İskelesi',  lat: 38.455267,  lon: 27.120108,  hdg: 120 },
-  { id: 'bornova',   city: 'İzmir',    name: 'Bornova Küçükpark',   lat: 38.4601109, lon: 27.2133902, hdg: 0 },
-  { id: 'taksim',    city: 'İstanbul', name: 'Taksim Meydanı',      lat: 41.0370023, lon: 28.9850917, hdg: 200 },
-  { id: 'galata',    city: 'İstanbul', name: 'Galata Kulesi',       lat: 41.025569,  lon: 28.9741286, hdg: 0 },
-  { id: 'kizilay',   city: 'Ankara',   name: 'Kızılay Meydanı',     lat: 39.9207221, lon: 32.8536217, hdg: 0 },
-  { id: 'times',     city: 'New York', name: 'Times Square',        lat: 40.7579747, lon: -73.9855426, hdg: 29 },
+  { id: 'kordon',    city: 'İzmir',    name: 'Kordon sahil yolu',            lat: 38.43671, lon: 27.14004, hdg: 36 },
+  { id: 'alsancak',  city: 'İzmir',    name: 'Alsancak · Cumhuriyet Blv.',   lat: 38.43807, lon: 27.14215, hdg: 19 },
+  { id: 'kibris',    city: 'İzmir',    name: 'Alsancak · Kıbrıs Şehitleri',  lat: 38.4373,  lon: 27.1436,  hdg: 16 },
+  { id: 'konak',     city: 'İzmir',    name: 'Konak Saat Kulesi',            lat: 38.41908, lon: 27.12877, hdg: 106 },
+  { id: 'kulturpark',city: 'İzmir',    name: 'Kültürpark · Refik Saydam Blv.', lat: 38.42737, lon: 27.14139, hdg: 342 },
+  { id: 'karsiyaka', city: 'İzmir',    name: 'Karşıyaka İskelesi',           lat: 38.45494, lon: 27.11959, hdg: 44 },
+  { id: 'bornova',   city: 'İzmir',    name: 'Bornova Küçükpark',            lat: 38.4601109, lon: 27.2133902, hdg: 310 },
+  { id: 'taksim',    city: 'İstanbul', name: 'Taksim Meydanı',               lat: 41.03683, lon: 28.98561, hdg: 166 },
+  { id: 'galata',    city: 'İstanbul', name: 'Galata Kulesi',                lat: 41.02563, lon: 28.97382, hdg: 62 },
+  { id: 'kizilay',   city: 'Ankara',   name: 'Kızılay · Ziya Gökalp Cd.',    lat: 39.92083, lon: 32.85415, hdg: 274 },
+  { id: 'times',     city: 'New York', name: 'Times Square',                 lat: 40.75800, lon: -73.98557, hdg: 30 },
 ];
 const ROUTES = [
   { id: 'korfez',  name: 'Gündoğdu → Karşıyaka (Körfez üstünden)', a: 'kordon', b: 'karsiyaka', note: 'Rota denizin üstünden geçiyor. Her zıplamanın sonu körfez.' },
@@ -492,6 +493,7 @@ const S = {
 function freshStats() { return { t: 0, flyT: 0, flyDist: 0, dist: 0, crashes: 0, fines: 0, maxSpd: 0, takeoffs: 0, airUsed: 0, best096: null }; }
 S.stats = freshStats();
 window.KT = S;
+if (qs.get('debug')) window.__kt = { S, R: null };
 
 /* =====================================================================
    MESSAGES
@@ -757,10 +759,19 @@ async function svGet(id) {
 }
 async function svFind(lat, lng, radius) {
   if (!svService) return null;
-  try {
-    const r = await svService.getPanorama({ location: { lat, lng }, radius, source: SVL.StreetViewSource.OUTDOOR, preference: SVL.StreetViewPreference.NEAREST });
-    const n = toNode(r.data); panoCache.set(n.id, Promise.resolve(n)); return n;
-  } catch (e) { return null; }
+  const tries = [
+    { location: { lat, lng }, radius, sources: [SVL.StreetViewSource.GOOGLE], preference: SVL.StreetViewPreference.NEAREST },
+    { location: { lat, lng }, radius, source: SVL.StreetViewSource.OUTDOOR, preference: SVL.StreetViewPreference.NEAREST },
+  ];
+  for (const req of tries) {
+    try {
+      const r = await svService.getPanorama(req);
+      const n = toNode(r.data);
+      if (!n.links.length && req.sources) continue;          // a lone photo sphere: no roads to follow
+      panoCache.set(n.id, Promise.resolve(n)); return n;
+    } catch (e) { /* try the next */ }
+  }
+  return null;
 }
 // route buffer: chain of panoramas ahead of the car along its heading
 const R = {
@@ -854,6 +865,7 @@ function setMode(m) {
 }
 function svZoom() { const H = innerWidth >= innerHeight ? 80 : 60; return Math.log2(180 / H); }
 
+if (window.__kt) window.__kt.R = R;
 /* =====================================================================
    THE CAR (original design, drawn with three.js on a transparent layer)
    ===================================================================== */
@@ -1356,6 +1368,10 @@ function cityOf(p) {
 let lastT = performance.now();
 function frame(now) {
   const dt = Math.min(0.066, (now - lastT) / 1000); lastT = now;
+  update(dt);
+  requestAnimationFrame(frame);
+}
+function update(dt) {
   if (S.phase === 'drive') {
     S.t += dt; S.stats.t += dt;
     try { if (S.mode === 'sv') { if (pano && R.nodes.length) stepSV(dt); } else { step3D(dt); sync3DCamera(dt); } } catch (e) { console.error(e); }
@@ -1368,9 +1384,9 @@ function frame(now) {
     _hpr.heading = S.orbit; _hpr.pitch = -0.5; _hpr.range = 650;
     camera.lookAt(C.Cartesian3.fromDegrees(S.spot.lon, S.spot.lat, S.spotH || 0), _hpr);
   }
-  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+if (window.__kt) window.__kt.tick = (dt = 0.05, n = 1) => { for (let i = 0; i < n; i++) update(dt); };
 
 /* =====================================================================
    INPUT
