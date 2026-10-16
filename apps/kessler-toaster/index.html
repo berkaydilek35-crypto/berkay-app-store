@@ -1,0 +1,1628 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Kessler Toaster</title>
+<meta name="description" content="Uçan tost makinesiyle gerçek şehrin 3D haritasında dolaş. Değerler Tesla Roadster lansmanından. Soru tek: Uçarak gidebilir misin?">
+<meta property="og:title" content="Kessler Toaster — Gidebilir misin?">
+<meta property="og:description" content="Uçan arabayla şehirde gerçekten gidebilir misin? Gerçek değerler, gerçek binalar, gerçek hayal kırıklığı.">
+<meta name="theme-color" content="#0d1013">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script>window.CESIUM_BASE_URL = 'https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/';</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<style>
+/* Layout: full-screen 3D map; HUD floats on the four corners, messages pop out of a "toaster slot" at top centre. */
+:root{
+  --ink:#0d1013;
+  --panel:rgba(14,17,21,.80);
+  --panel-solid:#151a1f;
+  --line:rgba(214,222,230,.16);
+  --chrome:#dfe5ea;
+  --steel:#9aa6b2;
+  --text:#eef2f5;
+  --toast:#e8ae62;
+  --toast-hi:#f6cf8e;
+  --crust:#7a4520;
+  --heat:#ff5b1f;
+  --ok:#7fd4a0;
+  --warn:#ffcf4a;
+  --f-display:'Bungee','Arial Black',Impact,system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-num:'Chakra Petch',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  --r:14px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;color:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--toast);outline-offset:2px}
+#cesium{position:fixed;inset:0}
+.cesium-widget-credits{font-size:10px!important;opacity:.9;left:max(8px,env(safe-area-inset-left,0px))!important;bottom:calc(4px + env(safe-area-inset-bottom,0px))!important}
+.cesium-viewer-bottom{z-index:3}
+
+/* ---------- shared bits ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);font-weight:600}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.btn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:10px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn.primary{background:linear-gradient(180deg,var(--toast-hi),var(--toast));color:#2a1608;border-color:var(--crust);box-shadow:inset 0 -3px 0 rgba(122,69,32,.45)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.35)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--steel)}
+.chip.g .dot{background:var(--ok)}
+.chip.f .dot{background:var(--warn)}
+.chip.musk{border-color:var(--heat);color:var(--heat)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#hud > *{pointer-events:auto}
+#brand{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.badge{display:flex;align-items:center;gap:9px;padding:7px 12px 7px 9px;border-radius:12px;background:linear-gradient(180deg,#f2f5f7,#aeb8c1);color:#1a1e22;border:1px solid #fff;box-shadow:0 2px 0 #5d6670,0 6px 18px rgba(0,0,0,.35)}
+.badge svg{width:30px;height:24px;flex:none}
+.badge b{font-family:var(--f-display);font-weight:400;font-size:15px;letter-spacing:.02em;line-height:1}
+.badge small{display:block;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#4a535c;margin-top:2px}
+#chips{display:flex;gap:6px;flex-wrap:wrap}
+#tools{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:60vw}
+#tools .btn{background:var(--panel);backdrop-filter:blur(8px)}
+#cluster{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));padding:12px 16px 12px;min-width:210px}
+#spd{font-size:64px;line-height:.9;font-weight:700;letter-spacing:-.02em}
+#spdUnit{font-size:13px;color:var(--steel);margin-left:4px;font-weight:600}
+#state{margin-top:8px;display:flex;gap:10px;align-items:center;font-size:12.5px;font-weight:600}
+#stateTag{padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.08);letter-spacing:.1em;font-size:11px}
+#stateTag.air{background:var(--heat);color:#1b0b03}
+#z96{font-size:11.5px;color:var(--steel);margin-top:6px}
+#gauges{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));padding:12px 14px;display:grid;gap:10px;width:280px}
+.g-row{display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:center}
+.bar{height:10px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;width:50%;border-radius:5px;background:linear-gradient(90deg,var(--toast),var(--toast-hi))}
+.bar.bat i{background:linear-gradient(90deg,#4fb37b,var(--ok))}
+.bar.low i{background:linear-gradient(90deg,#b8320c,var(--heat))}
+.g-sub{grid-column:2;font-size:11.5px;color:var(--steel);margin-top:-5px}
+#fineRow b{font-family:var(--f-num);font-size:18px}
+#mission{position:absolute;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:8px 14px;max-width:min(560px,calc(100vw - 32px))}
+#mission .arrow{width:34px;height:34px;flex:none;transition:transform .12s linear}
+#mission .mtxt{min-width:0}
+#mission .mname{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mission .mdist{font-family:var(--f-num);font-size:20px;font-weight:700}
+#hint{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:8px 14px;font-size:12px;color:var(--steel);display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:min(640px,calc(100vw - 520px))}
+#hint kbd{font-family:var(--f-num);background:rgba(255,255,255,.1);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--text);font-size:11px}
+body.rec #brand,body.rec #tools,body.rec #gauges,body.rec #hint,body.rec #mission{opacity:0;pointer-events:none}
+#recExit{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));opacity:.35}
+body:not(.rec) #recExit{display:none}
+body.rec #cluster{background:transparent;border-color:transparent;backdrop-filter:none}
+
+/* ---------- toaster slot messages ---------- */
+#toasts{position:fixed;top:calc(62px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 32px));z-index:12;pointer-events:none;display:flex;flex-direction:column;align-items:center}
+#slot{width:min(240px,60%);height:12px;border-radius:7px;background:#07090b;box-shadow:inset 0 3px 5px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.18);border:1px solid #2b3238;position:relative;z-index:2;opacity:.85}
+#toastStack{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:-4px;align-items:center}
+.toast{position:relative;width:100%;padding:12px 16px 11px;border-radius:30px 30px 12px 12px / 22px 22px 12px 12px;background:linear-gradient(180deg,var(--toast-hi),var(--toast) 70%,#cf8b45);border:2px solid var(--crust);color:#2a1608;font-weight:600;font-size:14px;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:pop .55s cubic-bezier(.2,1.5,.4,1) both;text-wrap:pretty}
+.toast.warn{background:linear-gradient(180deg,#d28a45,#a85b26 75%,#8a451b);color:#fff4e6}
+.toast.burnt{background:linear-gradient(180deg,#6b3a1a,#3d200d);color:#ffe2c4;border-color:#1f0f05}
+.toast.out{animation:sink .35s ease-in both}
+@keyframes pop{0%{transform:translateY(-46px) scaleY(.6);opacity:0}60%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes sink{to{transform:translateY(-40px) scaleY(.7);opacity:0}}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:radial-gradient(120% 90% at 50% 10%,rgba(13,16,19,.25),rgba(13,16,19,.78));overflow:auto}
+.sheet{width:min(1040px,100%);max-height:100%;overflow:auto;background:rgba(17,21,25,.92);border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.sheet.narrow{width:min(620px,100%)}
+.sheet-in{padding:22px;display:grid;gap:18px}
+.close{position:sticky;top:0;float:right;margin:12px 12px 0 0}
+
+#menu .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:22px}
+.hero{display:grid;gap:10px}
+.hero h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(30px,5vw,50px);line-height:.95;letter-spacing:.01em;color:var(--chrome);text-wrap:balance}
+.hero h1 span{color:var(--toast)}
+.hero p{margin:0;color:#c7d0d8;font-size:15px;line-height:1.5;max-width:58ch}
+.news{font-size:12.5px;color:var(--steel);line-height:1.5;border-left:3px solid var(--heat);padding-left:10px;max-width:62ch}
+.trims{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.trim{appearance:none;text-align:left;border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.04);cursor:pointer;display:grid;gap:8px;align-content:start;min-width:0}
+.trim:hover{background:rgba(255,255,255,.08)}
+.trim[aria-checked="true"]{border-color:var(--toast);background:linear-gradient(180deg,rgba(232,174,98,.16),rgba(232,174,98,.04));box-shadow:inset 0 0 0 1px var(--toast)}
+.trim .tn{font-family:var(--f-display);font-size:18px;font-weight:400;line-height:1}
+.trim .tr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel);font-weight:700}
+.trim dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:12px}
+.trim dt{color:var(--steel)}
+.trim dd{margin:0;font-weight:600;text-align:right;font-family:var(--f-num)}
+.trim .legal{font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;justify-self:start;background:rgba(127,212,160,.14);color:var(--ok)}
+.trim .legal.no{background:rgba(255,91,31,.15);color:var(--heat)}
+.trim .legal.mid{background:rgba(255,207,74,.14);color:var(--warn)}
+.common{font-size:12px;color:var(--steel);display:flex;gap:6px 14px;flex-wrap:wrap}
+.common b{color:var(--text);font-family:var(--f-num)}
+.side{display:grid;gap:14px;align-content:start}
+.field{display:grid;gap:6px}
+select,input[type=text]{width:100%;appearance:none;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:500 14px var(--f-body)}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--steel) 50%),linear-gradient(135deg,var(--steel) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.go{font-family:var(--f-display);font-weight:400;font-size:20px;padding:14px 18px;justify-content:center;width:100%;letter-spacing:.02em}
+.status{font-size:12px;color:var(--steel);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+details{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.2)}
+summary{cursor:pointer;font-size:12.5px;font-weight:600;color:#c7d0d8}
+details p{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
+.legalnote{font-size:11px;color:#7f8b96;line-height:1.5}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+
+/* route analysis */
+.ra-head h2,.res h2,.sci h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:26px;color:var(--chrome);line-height:1}
+.ra-sub{color:var(--steel);font-size:13px;margin-top:6px;line-height:1.45}
+.ra-dist{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.ra-dist b{font-family:var(--f-num);font-size:34px;white-space:nowrap}
+.ra-table{display:grid;gap:8px}
+.ra-item{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.ra-item .t{font-weight:600;font-size:14px}
+.ra-item .d{grid-column:1;font-size:12px;color:var(--steel);line-height:1.4}
+.ra-item .v{grid-row:1/3;grid-column:2;align-self:center;text-align:right;font-family:var(--f-num);font-size:18px;font-weight:700}
+.ra-item.hot{border-color:var(--heat);background:rgba(255,91,31,.07)}
+.verdict{padding:14px 16px;border-radius:14px;background:linear-gradient(180deg,#2a1a10,#1c120b);border:1px solid var(--crust)}
+.verdict .big{font-family:var(--f-display);font-size:28px;line-height:1;color:var(--toast)}
+.verdict .big.no{color:var(--heat)}
+.verdict p{margin:8px 0 0;font-size:14px;line-height:1.45;color:#f3dcc0}
+.foot{font-size:11px;color:#7f8b96;line-height:1.5}
+
+/* results */
+.res .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.stat b{display:block;font-family:var(--f-num);font-size:22px;margin-top:2px}
+
+/* science */
+.sci table{width:100%;border-collapse:collapse;font-size:13px}
+.sci td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.sci td:last-child{text-align:right;font-family:var(--f-num);font-weight:600;white-space:nowrap;padding-left:12px}
+.sci h3{margin:4px 0 2px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--toast)}
+.sci .tbl{overflow-x:auto}
+
+#pickBanner{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:9;padding:10px 14px;display:flex;gap:10px;align-items:center;font-weight:600;font-size:14px;max-width:calc(100vw - 32px)}
+#loading{position:fixed;inset:auto 0 calc(40% ) 0;z-index:9;display:flex;justify-content:center;pointer-events:none}
+#loading div{padding:12px 18px;font-weight:600;display:flex;gap:10px;align-items:center}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--toast);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- touch controls ---------- */
+#touch{position:fixed;inset:auto 0 0 0;z-index:6;pointer-events:none;display:none;justify-content:space-between;align-items:flex-end;padding-block:0 calc(26px + env(safe-area-inset-bottom,0px));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+#touch .pad{display:flex;gap:12px;pointer-events:auto;align-items:flex-end}
+.tb{width:70px;height:70px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(14,17,21,.62);backdrop-filter:blur(6px);font-weight:700;font-size:13px;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.tb.on{background:rgba(232,174,98,.85);color:#2a1608}
+.tb.fly{width:84px;height:84px;background:rgba(255,91,31,.75);color:#1b0b03;font-family:var(--f-display);font-weight:400;font-size:16px}
+.tb.gas{height:100px;border-radius:24px}
+.tb svg{width:26px;height:26px}
+.col{display:flex;flex-direction:column;gap:10px;align-items:center}
+
+@media (pointer:coarse){
+  #touch{display:flex}
+  #hint{display:none}
+  #cluster{bottom:auto;top:calc(118px + env(safe-area-inset-top,0px));padding:8px 12px;min-width:0}
+  #spd{font-size:40px}
+  #gauges{bottom:auto;top:calc(118px + env(safe-area-inset-top,0px));width:180px;padding:9px 11px;gap:7px}
+  .g-row{grid-template-columns:58px 1fr}
+  #gauges .label{font-size:9.5px;letter-spacing:.1em}
+  #mission{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+  #toasts{top:calc(252px + env(safe-area-inset-top,0px))}
+  #slot{display:none}
+}
+@media (max-width:820px){
+  #menu .grid{grid-template-columns:1fr}
+  .trims{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .trim{padding:10px;gap:6px}
+  .trim .tn{font-size:15px}
+  .trim .tr{font-size:9px;letter-spacing:.08em}
+  .trim .legal{font-size:10px;padding:2px 6px}
+  .trim dl{grid-template-columns:1fr;gap:0}
+  .trim dd{text-align:left;margin-bottom:4px}
+  .trim dl > :nth-child(n+3):nth-child(-n+6){display:none}
+  #tools{max-width:52vw}
+  #tools .btn .t{display:none}
+  .res .stats{grid-template-columns:repeat(2,1fr)}
+  #hint{display:none}
+}
+@media (max-width:460px){
+  #gauges{width:150px}
+  #cluster #z96{display:none}
+  .sheet-in{padding:16px}
+  #brand .badge > div{display:none}
+  #brand .badge{padding:6px 8px}
+  #tools{max-width:none;gap:5px;flex-wrap:nowrap}
+  #tools .btn{padding:8px 9px}
+  .g-sub.short{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .toast,.toast.out{animation:none}
+  .spin{animation:none}
+}
+</style>
+</head>
+<body>
+<div id="cesium"></div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" hidden>
+  <div id="brand">
+    <div class="badge" aria-label="Kessler Toaster">
+      <svg viewBox="0 0 60 48" aria-hidden="true"><rect x="10" y="4" width="10" height="16" rx="2" fill="#d99a4e" stroke="#7a4520" stroke-width="2"/><rect x="26" y="2" width="10" height="18" rx="2" fill="#d99a4e" stroke="#7a4520" stroke-width="2"/><rect x="4" y="14" width="46" height="24" rx="9" fill="#e9eef2" stroke="#1a1e22" stroke-width="2.5"/><rect x="9" y="13" width="14" height="3" rx="1.5" fill="#1a1e22"/><rect x="25" y="13" width="14" height="3" rx="1.5" fill="#1a1e22"/><circle cx="14" cy="40" r="5" fill="#1a1e22"/><circle cx="40" cy="40" r="5" fill="#1a1e22"/><path d="M50 30 L59 27 L59 35 Z" fill="#ff5b1f"/></svg>
+      <div><b>KESSLER TOASTER</b><small id="trimLabel">Kızarmış</small></div>
+    </div>
+    <div id="chips">
+      <span class="chip" id="modeChip"><span class="dot"></span><span id="modeTxt">Harita</span></span>
+      <span class="chip musk" id="muskChip" hidden>Musk Modu</span>
+    </div>
+  </div>
+
+  <div id="tools">
+    <button class="btn" id="bRoute" title="Gidebilir miyim? (G)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M8.5 15.5 15.5 8.5" stroke-dasharray="3 3"/></svg><span class="t">Gidebilir miyim?</span></button>
+    <button class="btn" id="bCam" title="Kamera (C)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="t">Kamera</span></button>
+    <button class="btn" id="bMusk" title="Sonsuz hava, sunumdaki gibi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c3 3 4 7 4 11l-4 4-4-4c0-4 1-8 4-11z"/><path d="M8 17l-2 5 4-2M16 17l2 5-4-2"/></svg><span class="t">Musk Modu</span></button>
+    <button class="btn" id="bRec" title="Kayıt modu: arayüzü gizle (H)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg><span class="t">Kayıt</span></button>
+    <button class="btn" id="bReset" title="Sıfırla (R)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="t">Sıfırla</span></button>
+    <button class="btn" id="bMenu" title="Menü (Esc)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="t">Menü</span></button>
+  </div>
+
+  <button class="btn" id="recExit" aria-label="Kayıt modundan çık">Arayüzü göster</button>
+  <div id="mission" class="panel" hidden>
+    <svg class="arrow" id="mArrow" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.2)"/><path d="M20 6 L29 28 L20 23 L11 28 Z" fill="#e8ae62" stroke="#7a4520" stroke-width="1.5"/></svg>
+    <div class="mtxt"><div class="label">Hedef</div><div class="mname" id="mName">—</div></div>
+    <div class="mdist num" id="mDist">—</div>
+  </div>
+
+  <div id="cluster" class="panel">
+    <div><span id="spd" class="num">0</span><span id="spdUnit">km/s</span></div>
+    <div id="state"><span id="stateTag">YERDE</span><span class="num" id="alt">0 m</span></div>
+    <div id="z96" class="num">0–96 km/s: henüz denemedin</div>
+  </div>
+
+  <div id="gauges" class="panel">
+    <div class="g-row"><span class="label">Hava</span><div class="bar" id="airBarW"><i id="airBar"></i></div><div class="g-sub num" id="airTxt">—</div></div>
+    <div class="g-row"><span class="label">Batarya</span><div class="bar bat" id="batBarW"><i id="batBar"></i></div><div class="g-sub num" id="batTxt">—</div></div>
+    <div class="g-row" id="fineRow"><span class="label">Ceza</span><div><b id="fine">0</b> <span class="g-sub short" style="margin:0">/ 100 puan</span></div></div>
+  </div>
+
+  <div id="hint" class="panel">
+    <span><kbd>W</kbd><kbd>S</kbd> gaz / fren</span>
+    <span><kbd>A</kbd><kbd>D</kbd> direksiyon</span>
+    <span><kbd>Boşluk</kbd> uç</span>
+    <span><kbd>Shift</kbd> itici boost</span>
+    <span><kbd>C</kbd> kamera</span>
+    <span><kbd>H</kbd> kayıt modu</span>
+  </div>
+</div>
+
+<div id="toasts" aria-live="polite"><div id="slot" hidden></div><div id="toastStack"></div></div>
+
+<div id="touch" hidden>
+  <div class="pad">
+    <button class="tb" data-key="left" aria-label="Sola"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="tb" data-key="right" aria-label="Sağa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+  <div class="pad">
+    <div class="col">
+      <button class="tb" data-key="boost">BOOST</button>
+      <button class="tb" data-key="down">FREN</button>
+    </div>
+    <div class="col">
+      <button class="tb fly" data-key="space">UÇ</button>
+      <button class="tb gas" data-key="up">GAZ</button>
+    </div>
+  </div>
+</div>
+
+<div id="pickBanner" class="panel" hidden><span id="pickTxt">Haritada bir noktaya dokun</span><button class="btn ghost" id="pickCancel">Vazgeç</button></div>
+<div id="loading" hidden><div class="panel"><span class="spin"></span><span id="loadTxt">Yükleniyor…</span></div></div>
+
+<!-- ============ START MENU ============ -->
+<div id="menu" class="overlay">
+  <div class="sheet">
+    <div class="sheet-in">
+      <div class="grid">
+        <div class="hero">
+          <div class="badge" style="justify-self:start">
+            <svg viewBox="0 0 60 48" aria-hidden="true"><rect x="10" y="4" width="10" height="16" rx="2" fill="#d99a4e" stroke="#7a4520" stroke-width="2"/><rect x="26" y="2" width="10" height="18" rx="2" fill="#d99a4e" stroke="#7a4520" stroke-width="2"/><rect x="4" y="14" width="46" height="24" rx="9" fill="#e9eef2" stroke="#1a1e22" stroke-width="2.5"/><rect x="9" y="13" width="14" height="3" rx="1.5" fill="#1a1e22"/><rect x="25" y="13" width="14" height="3" rx="1.5" fill="#1a1e22"/><circle cx="14" cy="40" r="5" fill="#1a1e22"/><circle cx="40" cy="40" r="5" fill="#1a1e22"/><path d="M50 30 L59 27 L59 35 Z" fill="#ff5b1f"/></svg>
+            <div><b>KESSLER TOASTER</b><small>Uçan tost makinesi</small></div>
+          </div>
+          <h1>Uçan arabayla şehirde <span>gidebilir misin?</span></h1>
+          <p>Gerçek şehrin 3D haritası, gerçek binalar, lansmanda açıklanan gerçek değerler. Bas gaza, ateşle iticileri, gör bakalım nereye kadar.</p>
+          <div class="news">15 Ekim 2026: Yeni Roadster, Teksas'taki gösteride rampadan atlayıp arabaların üstünden uçtu. Uçuş 600 litre basınçlı havayla, birkaç saniye sürüyor. Biz de aynı değerlerle bir tost makinesi yaptık.</div>
+          <div class="label" style="margin-top:6px">Versiyonunu seç</div>
+          <div class="trims" role="radiogroup" aria-label="Versiyon" id="trims"></div>
+          <div class="common" id="common"></div>
+        </div>
+        <div class="side">
+          <div class="field">
+            <label class="label" for="spotSel">Nereden kalkıyorsun?</label>
+            <select id="spotSel"></select>
+            <div class="row">
+              <button class="btn" id="bGeo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Konumum</button>
+              <button class="btn" id="bPickMap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Haritadan seç</button>
+            </div>
+          </div>
+          <button class="btn primary go" id="bStart">MOTORU ÇALIŞTIR</button>
+          <div class="status" id="mapStatus"><span class="spin"></span><span>Harita hazırlanıyor…</span></div>
+          <div class="links">
+            <button class="btn" id="bRoute2">Gidebilir miyim? hesabı</button>
+            <button class="btn" id="bSci">Bilim köşesi</button>
+          </div>
+          <details id="keyBox">
+            <summary>Google 3D anahtarı (geliştirici)</summary>
+            <p>Google Photorealistic 3D Tiles için Map Tiles API anahtarı gerekir. Anahtar yoksa ya da kota dolduysa uygulama ücretsiz modda çalışır: OpenStreetMap haritası ve binaları.</p>
+            <div class="row"><input type="text" id="keyInput" placeholder="AIza…" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button class="btn" id="keySave">Kaydet</button></div>
+            <div class="row" style="margin-top:8px"><button class="btn ghost" id="keyClear">Anahtarı sil</button><button class="btn ghost" id="forceFree">Ücretsiz modu dene</button></div>
+          </details>
+          <div class="legalnote">Parodi ve eğlence projesidir; Tesla, Inc. ile bağlantısı yoktur. Değerler 15 Ekim 2026 lansmanında açıklanan rakamlardan alınmıştır, geri kalanı kaba hesap. Konumun cihazında kalır, hiçbir yere kaydedilmez.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ROUTE ANALYSIS ============ -->
+<div id="route" class="overlay" hidden>
+  <div class="sheet narrow">
+    <button class="btn close" data-close="route" aria-label="Kapat">Kapat</button>
+    <div class="sheet-in">
+      <div class="ra-head">
+        <h2>Gidebilir miyim?</h2>
+        <div class="ra-sub">A'dan B'ye uçan arabayla gerçekten gidilir mi? Fizik, trafik ve yürüyüşle kıyaslıyoruz.</div>
+      </div>
+      <div class="field">
+        <label class="label" for="routeSel">Hazır rota</label>
+        <select id="routeSel"></select>
+        <div class="row">
+          <button class="btn" id="bPickB">B noktasını haritada seç</button>
+        </div>
+      </div>
+      <div id="raOut"></div>
+      <div class="row"><button class="btn primary" id="bDrive" style="flex:1;justify-content:center">Bu rotayı sür</button></div>
+      <div class="foot" id="raFoot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RESULT ============ -->
+<div id="result" class="overlay" hidden>
+  <div class="sheet narrow">
+    <div class="sheet-in res">
+      <div><div class="label" id="resKicker">Görev bitti</div><h2 id="resTitle">Vardın</h2></div>
+      <div class="stats" id="resStats"></div>
+      <div class="verdict"><div class="big" id="resBig">—</div><p id="resText"></p></div>
+      <div class="row">
+        <button class="btn primary" id="bShare" style="flex:1;justify-content:center">Sonucu paylaş</button>
+        <button class="btn" id="bAgain">Tekrar dene</button>
+        <button class="btn" data-close="result">Devam et</button>
+      </div>
+      <div class="foot" id="shareMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCIENCE ============ -->
+<div id="science" class="overlay" hidden>
+  <div class="sheet narrow">
+    <button class="btn close" data-close="science" aria-label="Kapat">Kapat</button>
+    <div class="sheet-in sci">
+      <div><h2>Bilim köşesi</h2><div class="ra-sub">Hangi rakam Tesla'dan geldi, hangisi bizim hesabımız? Hepsi burada.</div></div>
+      <div class="tbl" id="sciBody"></div>
+      <div class="foot">Varsayımlar kaba hesaptır ve eğlence amaçlıdır. Tesla tank basıncını, batarya kapasitesini ve fiyatı açıklamadı.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* =====================================================================
+   CONFIG — deploy ederken GOOGLE_KEY'i doldur (anahtarı sadece kendi
+   alan adına kısıtla). Boş kalırsa uygulama ücretsiz modda açılır.
+   ===================================================================== */
+const CONFIG = {
+  GOOGLE_KEY: 'AIzaSyAxnPKIId5vHXIgsVJ8TemLYDLuH9l9sxo',
+  DEFAULT_TRIM: 'kizarmis',
+  DEFAULT_SPOT: 'kordon',
+};
+
+const C = window.Cesium;
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const DEG = Math.PI / 180;
+const R_EARTH = 6378137;
+const G0 = 9.80665;
+const qs = new URLSearchParams(location.search);
+const isTouch = matchMedia('(pointer:coarse)').matches;
+const fmt = (n, d = 0) => Number(n).toLocaleString('tr-TR', { maximumFractionDigits: d, minimumFractionDigits: d });
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function fmtDur(sec) {
+  sec = Math.max(0, Math.round(sec));
+  if (sec < 60) return sec + ' sn';
+  const m = Math.floor(sec / 60), s = sec % 60;
+  if (m < 60) return s && m < 10 ? `${m} dk ${s} sn` : `${m} dk`;
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (h < 48) return mm ? `${h} sa ${mm} dk` : `${h} sa`;
+  return `${fmt(h / 24, 1)} gün`;
+}
+
+/* =====================================================================
+   PHYSICS — Tesla'nın açıkladığı + bizim varsayımlarımız
+   ===================================================================== */
+const SPEC = {
+  // Tesla (15 Ekim 2026 lansmanı)
+  copvL: 600,            // 10 iticiye bağlı basınçlı hava (L)
+  vmaxMph: 230,          // tepe hız 230+ mph
+  rangeMi: 300,          // menzil 300+ mil
+  thrustVsTires: 4.5,    // iticiler lastik tutuşunun 4-5 katı
+  // Varsayımlar
+  massKg: 1815,          // ~4000 lb
+  bar: 300, tempK: 293, Z: 1.1,
+  isp: 55,               // soğuk gaz, deniz seviyesi (s)
+  compEff: 0.6, compressorKW: 100,
+  batteryKWh: 100,
+  cityKmh: 22, detour: 1.35, walkKmh: 5,
+};
+const PHYS = (() => {
+  const rho = SPEC.bar * 1e5 / (SPEC.Z * 287.05 * SPEC.tempK);
+  const airKg = rho * SPEC.copvL / 1000;
+  const impulse = airKg * SPEC.isp * G0;
+  const hoverN = (SPEC.massKg + airKg) * G0;
+  const hoverSec = impulse / hoverN;
+  const compJ = airKg * 287.05 * SPEC.tempK * Math.log(SPEC.bar / 1.013) / SPEC.compEff;
+  const refillKWh = compJ / 3.6e6;
+  const refillSec = refillKWh / SPEC.compressorKW * 3600;
+  const vmax = SPEC.vmaxMph * 0.44704;
+  const rangeKm = SPEC.rangeMi * 1.609344;
+  const v60 = 26.8224;
+  const a060 = (t) => v60 / t / 0.96;
+  return {
+    airKg, impulse, hoverSec, hoverN, refillKWh, refillSec, vmax, rangeKm,
+    kWhPerKm: SPEC.batteryKWh / rangeKm,
+    v60, a060, baseA: a060(1.6),
+    brakeA: 14, revA: 6, vrev: 14,
+    maxThrustN: SPEC.massKg * G0 * SPEC.thrustVsTires,
+  };
+})();
+
+const TRIMS = {
+  ekmek:    { key: 'ekmek',    name: 'Ekmek',    real: 'Performance', seats: 2, t060: 1.6,  boost: false, vertical: false, rot: false, thr: 'Yok', fly: 'Hayır', legal: 'Yola hazır', lc: '' },
+  tost:     { key: 'tost',     name: 'Tost',     real: 'Thrust',      seats: 2, t060: 0.9,  boost: true,  vertical: false, rot: false, thr: 'Arkada', fly: 'Hayır', legal: 'Piste hazır', lc: 'mid' },
+  kizarmis: { key: 'kizarmis', name: 'Kızarmış', real: 'Rocket',      seats: 1, t060: 0.59, boost: true,  vertical: true,  rot: true,  thr: '10 adet', fly: '~' + fmt(PHYS.hoverSec, 1) + ' sn', legal: 'Yol onayı yok', lc: 'no' },
+};
+
+const SPOTS = [
+  { id: 'kordon',    city: 'İzmir',    name: 'Gündoğdu / Kordon',   lat: 38.4358061, lon: 27.1394477, hdg: 27 },
+  { id: 'konak',     city: 'İzmir',    name: 'Konak Saat Kulesi',   lat: 38.4189,    lon: 27.1287,    hdg: 35 },
+  { id: 'kulturpark',city: 'İzmir',    name: 'Kültürpark',          lat: 38.4284811, lon: 27.145345,  hdg: 0 },
+  { id: 'karsiyaka', city: 'İzmir',    name: 'Karşıyaka İskelesi',  lat: 38.455267,  lon: 27.120108,  hdg: 120 },
+  { id: 'bornova',   city: 'İzmir',    name: 'Bornova Küçükpark',   lat: 38.4601109, lon: 27.2133902, hdg: 0 },
+  { id: 'taksim',    city: 'İstanbul', name: 'Taksim Meydanı',      lat: 41.0370023, lon: 28.9850917, hdg: 200 },
+  { id: 'galata',    city: 'İstanbul', name: 'Galata Kulesi',       lat: 41.025569,  lon: 28.9741286, hdg: 0 },
+  { id: 'kizilay',   city: 'Ankara',   name: 'Kızılay Meydanı',     lat: 39.9207221, lon: 32.8536217, hdg: 0 },
+  { id: 'times',     city: 'New York', name: 'Times Square',        lat: 40.7579747, lon: -73.9855426, hdg: 29 },
+  { id: 'burj',      city: 'Dubai',    name: 'Burj Khalifa',        lat: 25.197197,  lon: 55.2743764, hdg: 0 },
+];
+const ROUTES = [
+  { id: 'korfez',  name: 'Gündoğdu → Karşıyaka (Körfez üstünden)', a: 'kordon', b: 'karsiyaka', note: 'Rota denizin üstünden geçiyor. Her zıplamanın sonu körfez.' },
+  { id: 'bornova', name: 'Konak → Bornova Küçükpark',             a: 'konak',  b: 'bornova' },
+  { id: 'kordonb', name: 'Konak → Gündoğdu (Kordon boyu)',        a: 'konak',  b: 'kordon' },
+  { id: 'kultur',  name: 'Gündoğdu → Kültürpark',                 a: 'kordon', b: 'kulturpark', note: 'Fuar zamanı otopark bulmaktan kolay olabilir.' },
+  { id: 'galata',  name: 'Taksim → Galata Kulesi',                a: 'taksim', b: 'galata' },
+];
+const AIRPORTS = [
+  { name: 'Adnan Menderes Havalimanı', lat: 38.2924, lon: 27.1570 },
+  { name: 'İstanbul Havalimanı', lat: 41.2753, lon: 28.7519 },
+  { name: 'Sabiha Gökçen Havalimanı', lat: 40.8986, lon: 29.3092 },
+  { name: 'Esenboğa Havalimanı', lat: 40.1281, lon: 32.9951 },
+  { name: 'Atatürk Havalimanı', lat: 40.9769, lon: 28.8146 },
+];
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const S = {
+  phase: 'menu',          // menu | pick | loading | drive
+  mapMode: null,          // google | free
+  mapReady: false,
+  trim: TRIMS[qs.get('trim')] ? qs.get('trim') : CONFIG.DEFAULT_TRIM,
+  spot: null,
+  musk: false,
+  car: { lon: 0, lat: 0, h: 0, heading: 0, vE: 0, vN: 0, vz: 0, onGround: true, pitch: 0, roll: 0, steer: 0 },
+  air: PHYS.impulse, battery: 0.92,
+  ground: undefined, streetRef: null,
+  keys: {}, camMode: 0, camHeading: 0, orbit: 0, shake: 0, pop: 0,
+  fly: { up: 0, rear: 0 },
+  stats: null, mission: null, pickFor: null, lastCrashT: -9, idleT: 0, rec: false,
+  flags: {}, t: 0, z96: null, best096: null, lastSpawn: null, routeB: null,
+};
+function freshStats() { return { t: 0, flyT: 0, flyDist: 0, dist: 0, crashes: 0, fines: 0, maxSpd: 0, takeoffs: 0, airUsed: 0, best096: null }; }
+S.stats = freshStats();
+window.KT = S; // debug
+
+/* =====================================================================
+   MESSAGES (toaster slot)
+   ===================================================================== */
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const lastMsg = {};
+function toast(text, kind = '', key = null, cooldown = 6) {
+  if (key) { const now = performance.now() / 1000; if (lastMsg[key] && now - lastMsg[key] < cooldown) return; lastMsg[key] = now; }
+  const stack = $('#toastStack');
+  $('#slot').hidden = false;
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = text;
+  stack.prepend(el);
+  while (stack.children.length > 3) stack.lastChild.remove();
+  const life = Math.min(7000, 2600 + text.length * 45);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 380); }, life);
+}
+const M = {
+  start: {
+    ekmek: 'Ekmek (Performance) seçtin: yola hazır, uçmaya hazır değil. Emme fanları seni yere yapıştırır, o kadar.',
+    tost: 'Tost (Thrust): iticiler sadece arkada. İleri fırlarsın, yukarı fırlamazsın.',
+    kizarmis: 'Kızarmış (Rocket): tek koltuk, 10 itici. Tesla\'nın kendi sayfasına göre trafiğe çıkma onayı yok. Yani şu an yasal olarak hayal ediyorsun.',
+  },
+  takeoff1: 'Kalkış! Sivil havacılık izni: yok. Kasko: kanatları kapsamıyor.',
+  takeoff: [
+    'Yine havadasın. Altındaki trafik seni izliyor, kıskançlıktan değil, korkudan.',
+    'İticiler ateşlendi. Tost ekmekleri de fırladı, fark ettin mi?',
+    'Uçuyorsun. Sigortacın şu an bir yerde hapşırdı.',
+    'Kalkış başarılı. İniş konusunda henüz bir taahhüt yok.',
+  ],
+  air50: '600 litrenin yarısı gitti. "Çok" dediler, "uzun" demediler.',
+  air20: 'Hava azaldı. İniş planın var mı? Yerçekiminin var.',
+  air0: 'Hava bitti. Bundan sonrasını Newton sürüyor.',
+  air0ground: () => `Tank boş. Pompa doldururken ${fmtDur(PHYS.refillSec)} bekleyeceksin ve bataryanın %${fmt(PHYS.refillKWh / SPEC.batteryKWh * 100)}'i gidecek.`,
+  alt120: 'Yerden 120 metre. Dronların yasal tavanı burası. Sen drone bile değilsin.',
+  alt300: '300 metre. Bu yükseklikte trafik cezası değil, NOTAM yazılır.',
+  spd50: 'Şehir içi sınır 50 km/s. Senin için bu ısınma turu.',
+  spd150: '150 km/s şehir içinde. Radar flaşı patlayana kadar sen iki sokak ötedesin.',
+  spd300: '300 km/s. Sokak bitti, sen bitmedin. Henüz.',
+  z96: (t, claim) => `0–96 km/s: ${fmt(t, 2)} sn. Tesla'nın iddiası: ${fmt(claim, 2)} sn altı. Boyun fıtığı hediye.`,
+  crashSoft: ['Hafif temas. Duvar bir şey demedi ama kırgın.', 'Kaldırım değil, bina. Fark ince ama önemli.', 'Google\'ın 3D arabalarından birine sürttün. Eriyik ama sağlam.'],
+  crashHard: ['Binaya girdin. Kentsel dönüşümü hızlandırdın.', 'Duvarla tanıştın. Duvar kazandı.', 'Google\'ın 3D binası bile senden sağlam çıktı.', 'Çarpışma! Tesla "güvenlik öncelik değil" demişti, haklıymış.'],
+  hardLand: 'Sert iniş. Amortisörler emeklilik dilekçesi verdi.',
+  softLand: 'Yumuşak iniş. İticiler son anda yastık oldu, tıpkı demodaki gibi.',
+  roof: 'Çatıya park ettin. Otopark ücreti yok, yönetim aidatı var.',
+  noVert: {
+    ekmek: 'Bu versiyonda yukarı itici yok. Uçmak için Kızarmış (Rocket) lazım, o da davetiyeli.',
+    tost: 'Tost\'un iticileri arkada. Uçamazsın ama çok hızlı uçamazsın.',
+  },
+  noBoost: 'Ekmek versiyonunda itici yok. Boost diye bir şey yok, sadece cesaret var.',
+  airport: (n) => `${n} kontrol bölgesine yaklaştın. Kule seni radarda "tost makinesi" diye kaydetti.`,
+  muskOn: 'Musk Modu açık: sonsuz hava. Fizik kuralları "gelecek çeyrekte" güncellenecek.',
+  muskOff: 'Musk Modu kapandı. Fizik geri döndü, faturasıyla.',
+  idleIzmir: 'Duruyorsun. İzmir trafiğinde buna "normal sürüş" deniyor.',
+  idle: 'Duruyorsun. Gerçekçilik puanı: tam.',
+  reset: 'Sıfırlandın. Sigorta kayıtlarında görünmez. (Görünür.)',
+  license: 'Ceza puanın 100\'ü geçti. Gerçek hayatta ehliyetine el konurdu. Burada sadece utanırsın.',
+  fallFar: 'Bir yerden düştün ama nereye düştüğün belirsiz. Harita yükleniyor, sen de toparlan.',
+};
+
+/* =====================================================================
+   VIEWER
+   ===================================================================== */
+const viewer = new C.Viewer('cesium', {
+  animation: false, baseLayerPicker: false, fullscreenButton: false, geocoder: false, homeButton: false,
+  infoBox: false, sceneModePicker: false, selectionIndicator: false, timeline: false,
+  navigationHelpButton: false, vrButton: false, projectionPicker: false,
+  baseLayer: false, requestRenderMode: false, msaaSamples: isTouch ? 1 : 4,
+  shadows: false,
+});
+const scene = viewer.scene;
+const camera = viewer.camera;
+scene.globe.show = false;
+scene.globe.baseColor = C.Color.fromCssColorString('#2a3036');
+scene.globe.depthTestAgainstTerrain = true;
+scene.fog.enabled = true;
+const sun = new C.DirectionalLight({ direction: new C.Cartesian3(0.3, 0.3, -1) });
+scene.light = sun;
+scene.screenSpaceCameraController.enableCollisionDetection = true;
+scene.screenSpaceCameraController.enableInputs = false;
+viewer.cesiumWidget.creditContainer.style.zIndex = 3;
+
+/* ---------- car model (procedural toaster) ---------- */
+const VF = C.PerInstanceColorAppearance.VERTEX_FORMAT;
+const ROT_LAT = C.Matrix3.fromRotationX(Math.PI / 2);   // cylinder axis -> left/right
+const ROT_LON = C.Matrix3.fromRotationY(Math.PI / 2);   // cylinder axis -> forward/back
+function boxI(dx, dy, dz, x, y, z, col) {
+  return new C.GeometryInstance({
+    geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(dx, dy, dz), vertexFormat: VF }),
+    modelMatrix: C.Matrix4.fromTranslation(new C.Cartesian3(x, y, z)),
+    attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(col)) },
+  });
+}
+function cylI(len, rt, rb, x, y, z, col, rot) {
+  return new C.GeometryInstance({
+    geometry: new C.CylinderGeometry({ length: len, topRadius: rt, bottomRadius: rb, slices: 28, vertexFormat: VF }),
+    modelMatrix: C.Matrix4.fromRotationTranslation(rot || C.Matrix3.IDENTITY, new C.Cartesian3(x, y, z)),
+    attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(col)) },
+  });
+}
+function prim(instances, translucent) {
+  return scene.primitives.add(new C.Primitive({
+    geometryInstances: instances,
+    appearance: new C.PerInstanceColorAppearance({ translucent: !!translucent, flat: !!translucent, closed: !translucent }),
+    asynchronous: false, modelMatrix: C.Matrix4.IDENTITY, show: false,
+  }));
+}
+const CAR = (() => {
+  const b = [];
+  b.push(boxI(4.30, 2.00, 1.26, 0, 0, 1.03, '#d3d9df'));       // chrome body
+  b.push(boxI(4.40, 2.08, 0.20, 0, 0, 0.44, '#3a4047'));       // base plinth
+  b.push(boxI(3.30, 0.36, 0.05, 0, 0.42, 1.67, '#121518'));    // slots
+  b.push(boxI(3.30, 0.36, 0.05, 0, -0.42, 1.67, '#121518'));
+  b.push(boxI(0.20, 0.12, 0.50, -0.9, 1.06, 1.15, '#1b1e22'));  // lever track
+  b.push(boxI(0.40, 0.22, 0.12, -0.9, 1.14, 1.32, '#ff5b1f'));  // lever knob
+  b.push(cylI(0.07, 0.18, 0.18, 0.9, -1.04, 1.05, '#ff5b1f', ROT_LAT)); // browning dial
+  b.push(boxI(0.05, 1.60, 0.12, 2.16, 0, 1.15, '#fff3d1'));    // headlight strip
+  b.push(boxI(0.05, 1.86, 0.10, -2.16, 0, 1.22, '#ff3418'));   // taillight strip
+  for (const sx of [1.45, -1.45]) for (const sy of [0.93, -0.93]) {
+    b.push(cylI(0.32, 0.38, 0.38, sx, sy, 0.38, '#121315', ROT_LAT));
+    b.push(cylI(0.34, 0.17, 0.17, sx, sy, 0.38, '#9aa4ae', ROT_LAT));
+  }
+  for (const sy of [0.55, -0.55]) b.push(cylI(0.26, 0.15, 0.17, -2.27, sy, 0.78, '#2a2e33', ROT_LON)); // rear nozzles
+  for (const sx of [1.5, -1.5]) for (const sy of [0.78, -0.78]) b.push(cylI(0.1, 0.16, 0.16, sx, sy, 0.33, '#2a2e33')); // belly nozzles
+  const body = prim(b);
+  const toastP = prim([
+    boxI(3.0, 0.24, 1.0, 0, 0.42, 1.28, '#d99a4e'), boxI(3.04, 0.27, 0.10, 0, 0.42, 1.80, '#8a5326'),
+    boxI(3.0, 0.24, 1.0, 0, -0.42, 1.28, '#d99a4e'), boxI(3.04, 0.27, 0.10, 0, -0.42, 1.80, '#8a5326'),
+  ]);
+  const up = [];
+  for (const sx of [1.5, -1.5]) for (const sy of [0.78, -0.78]) {
+    up.push(cylI(1.6, 0.30, 0.02, sx, sy, -0.8, 'rgba(255,150,60,0.75)'));
+    up.push(cylI(0.9, 0.16, 0.01, sx, sy, -0.45, 'rgba(255,240,200,0.9)'));
+  }
+  const upFlame = prim(up, true);
+  const rear = [];
+  for (const sy of [0.55, -0.55]) { rear.push(cylI(1.8, 0.24, 0.02, -0.9, sy, 0, 'rgba(180,220,255,0.55)', ROT_LON)); rear.push(cylI(1.0, 0.12, 0.01, -0.5, sy, 0, 'rgba(255,255,255,0.85)', ROT_LON)); }
+  const rearFlame = prim(rear, true);
+  return { body, toastP, upFlame, rearFlame };
+})();
+const EXCLUDE = [CAR.body, CAR.toastP, CAR.upFlame, CAR.rearFlame];
+function showCar(v) { CAR.body.show = v; CAR.toastP.show = v; if (!v) { CAR.upFlame.show = false; CAR.rearFlame.show = false; } }
+
+/* ---------- scratch ---------- */
+const _pos = new C.Cartesian3(), _enu = new C.Matrix4(), _R = new C.Matrix4(), _M = new C.Matrix4(), _M2 = new C.Matrix4();
+const _v3 = new C.Cartesian3(), _o = new C.Cartesian3(), _ray = new C.Ray();
+const _carto = new C.Cartographic();
+let rayBroken = false;
+
+function enuAt(lon, lat, h) {
+  C.Cartesian3.fromRadians(lon, lat, h, C.Ellipsoid.WGS84, _pos);
+  return C.Transforms.eastNorthUpToFixedFrame(_pos, C.Ellipsoid.WGS84, _enu);
+}
+// returns distance along the ray to the first hit (meters) or undefined
+function castRay(lon, lat, h, dE, dN, dU) {
+  if (rayBroken) return undefined;
+  const enu = enuAt(lon, lat, h);
+  C.Cartesian3.clone(_pos, _o);
+  _v3.x = dE; _v3.y = dN; _v3.z = dU;
+  C.Matrix4.multiplyByPointAsVector(enu, _v3, _ray.direction);
+  C.Cartesian3.normalize(_ray.direction, _ray.direction);
+  C.Cartesian3.clone(_o, _ray.origin);
+  try {
+    const r = scene.pickFromRay(_ray, EXCLUDE, 0.25);
+    if (r && r.position) return C.Cartesian3.distance(_o, r.position);
+  } catch (e) { rayBroken = true; console.warn('pickFromRay kullanılamıyor', e); }
+  return undefined;
+}
+function groundBelow(c) {
+  const start = 2.2;
+  const d = castRay(c.lon, c.lat, c.h + start, 0, 0, -1);
+  if (d === undefined) {
+    if (rayBroken && scene.sampleHeightSupported) {
+      _carto.longitude = c.lon; _carto.latitude = c.lat; _carto.height = 0;
+      try { return scene.sampleHeight(_carto, EXCLUDE); } catch (e) {}
+    }
+    return undefined;
+  }
+  return c.h + start - d;
+}
+function moveLL(lon, lat, dE, dN) { return [lon + dE / (R_EARTH * Math.cos(lat)), lat + dN / R_EARTH]; }
+function distM(lon1, lat1, lon2, lat2) {
+  const dLat = lat2 - lat1, dLon = lon2 - lon1;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+function bearingTo(lon1, lat1, lon2, lat2) {
+  const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+  return Math.atan2(y, x);
+}
+const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+
+/* =====================================================================
+   MAP MODES
+   ===================================================================== */
+function resolveKey() {
+  if (qs.get('mod') === 'free') return '';
+  return qs.get('key') || lsGet('kt_gkey') || CONFIG.GOOGLE_KEY || '';
+}
+function setModeChip() {
+  const chip = $('#modeChip');
+  chip.classList.toggle('g', S.mapMode === 'google');
+  chip.classList.toggle('f', S.mapMode === 'free');
+  $('#modeTxt').textContent = S.mapMode === 'google' ? 'Google 3D' : 'Ücretsiz mod · OSM';
+}
+function setMapStatus(html, ready) {
+  $('#mapStatus').innerHTML = (ready ? '' : '<span class="spin"></span>') + '<span>' + html + '</span>';
+}
+let tileset = null;
+async function initMap() {
+  const key = resolveKey();
+  if (key) {
+    try {
+      setMapStatus('Google 3D haritası yükleniyor…');
+      tileset = await C.createGooglePhotorealistic3DTileset(
+        { key, onlyUsingWithGoogleGeocoder: true },
+        { maximumScreenSpaceError: isTouch ? 24 : 16 });
+      scene.primitives.add(tileset);
+      S.mapMode = 'google';
+      S.mapReady = true;
+      setModeChip();
+      setMapStatus('Google 3D hazır. Gerçek binalar, gerçek duvarlar.', true);
+      return;
+    } catch (e) {
+      const code = e && (e.statusCode || (e.response && e.response.status));
+      console.warn('Google 3D yüklenemedi', e);
+      const why = code === 429 ? 'Google\'ın bugünkü 3D kotası doldu (tıpkı İzmir trafiği gibi).'
+        : code === 403 ? 'Google anahtarı bu adreste çalışmıyor.'
+        : 'Google 3D yüklenemedi.';
+      setTimeout(() => toast(why + ' Ücretsiz moddasın: OSM haritası ve binaları, fizik aynı.', 'warn'), 600);
+    }
+  }
+  await initFree();
+}
+async function initFree() {
+  S.mapMode = 'free';
+  scene.globe.show = true;
+  scene.imageryLayers.addImageryProvider(new C.GridImageryProvider({
+    cells: 4, color: C.Color.fromCssColorString('#5b6670').withAlpha(0.6),
+    glowColor: C.Color.TRANSPARENT, backgroundColor: C.Color.fromCssColorString('#2a3036'),
+  }));
+  try {
+    scene.imageryLayers.addImageryProvider(new C.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' }));
+  } catch (e) { console.warn(e); }
+  S.mapReady = true;
+  setModeChip();
+  setMapStatus('Ücretsiz mod: OpenStreetMap haritası ve binaları.', true);
+}
+
+/* ---------- free mode buildings (OpenStreetMap / Overpass) ---------- */
+const bSets = [];
+let bCenter = null, bLoading = false;
+function addBuildings(instances, tag) {
+  if (!instances.length) return null;
+  const p = scene.primitives.add(new C.Primitive({
+    geometryInstances: instances,
+    appearance: new C.PerInstanceColorAppearance({ translucent: false, closed: true }),
+    asynchronous: true, releaseGeometryInstances: true,
+  }));
+  bSets.push({ p, tag });
+  while (bSets.length > 3) { const old = bSets.shift(); scene.primitives.remove(old.p); }
+  return p;
+}
+function waitReady(p, ms) {
+  return new Promise((res) => {
+    const t0 = performance.now();
+    const tick = () => { if (!p || p.ready || performance.now() - t0 > ms) return res(); setTimeout(tick, 120); };
+    tick();
+  });
+}
+const shades = ['#c9c2b6', '#bdb5a8', '#d4cfc6', '#b1aca4', '#c7beb0', '#a9b0b5'];
+async function loadOsmBuildings(lonDeg, latDeg, radius = 650) {
+  if (bLoading) return;
+  bLoading = true;
+  bCenter = [lonDeg, latDeg];
+  const q = `[out:json][timeout:25];way["building"](around:${radius},${latDeg.toFixed(6)},${lonDeg.toFixed(6)});out geom 3500;`;
+  const endpoints = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  let json = null;
+  for (const ep of endpoints) {
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 14000);
+      const r = await fetch(ep, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctl.signal });
+      clearTimeout(to);
+      if (r.ok) { json = await r.json(); break; }
+    } catch (e) { /* try next */ }
+  }
+  let p = null;
+  if (json && json.elements) {
+    const inst = [];
+    for (const el of json.elements) {
+      const g = el.geometry;
+      if (!g || g.length < 4) continue;
+      const tags = el.tags || {};
+      let h = parseFloat(tags.height);
+      if (!isFinite(h)) { const lv = parseFloat(tags['building:levels']); h = isFinite(lv) ? lv * 3.2 + 1 : 9; }
+      h = clamp(h, 3, 450);
+      const pts = [];
+      for (let i = 0; i < g.length - 1; i++) pts.push(g[i].lon, g[i].lat);
+      if (pts.length < 6) continue;
+      inst.push(new C.GeometryInstance({
+        geometry: new C.PolygonGeometry({ polygonHierarchy: new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(pts)), height: 0, extrudedHeight: h, vertexFormat: VF }),
+        attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(shades[el.id % shades.length])) },
+      }));
+    }
+    p = addBuildings(inst, 'osm');
+  }
+  if (!p) {
+    toast('OSM binaları gelmedi. Hayali bir mahalle kurdum; duvarları en az gerçekleri kadar sert.', 'warn', 'osmfail', 60);
+    p = addBuildings(proceduralCity(lonDeg, latDeg), 'demo');
+  }
+  bLoading = false;
+  return p;
+}
+function proceduralCity(lonDeg, latDeg) {
+  const inst = [];
+  const enu = C.Transforms.eastNorthUpToFixedFrame(C.Cartesian3.fromDegrees(lonDeg, latDeg, 0));
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = -6; i < 6; i++) for (let j = -6; j < 6; j++) {
+    const cx = i * 60 + 30, cy = j * 60 + 30;
+    const w = 26 + rnd() * 14, d = 26 + rnd() * 14, h = 6 + rnd() * rnd() * 60;
+    const m = C.Matrix4.multiplyByTranslation(enu, new C.Cartesian3(cx, cy, h / 2), new C.Matrix4());
+    inst.push(new C.GeometryInstance({
+      geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(w, d, h), vertexFormat: VF }),
+      modelMatrix: m,
+      attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(shades[(i * 7 + j * 3 + 60) % shades.length])) },
+    }));
+  }
+  return inst;
+}
+
+/* =====================================================================
+   SPAWN
+   ===================================================================== */
+function showLoading(txt) { $('#loading').hidden = !txt; if (txt) $('#loadTxt').textContent = txt; }
+function withTimeout(p, ms) { return Promise.race([p, new Promise((r) => setTimeout(() => r('timeout'), ms))]); }
+async function spawnAt(lonDeg, latDeg, hdgDeg, label) {
+  S.phase = 'loading';
+  hideAll();
+  showLoading('Zemin aranıyor…');
+  const lon = lonDeg * DEG, lat = latDeg * DEG;
+  // aim the camera so tiles around the spawn load
+  camera.lookAtTransform(C.Matrix4.IDENTITY);
+  camera.setView({ destination: C.Cartesian3.fromDegrees(lonDeg, latDeg - 0.0012, 320), orientation: { heading: 0, pitch: -0.75, roll: 0 } });
+  if (S.mapMode === 'free') {
+    const near = bCenter && bSets.length && distM(lon, lat, bCenter[0] * DEG, bCenter[1] * DEG) < 300;
+    if (!near) {
+      if (qs.get('demo')) { bCenter = [lonDeg, latDeg]; addBuildings(proceduralCity(lonDeg, latDeg), 'demo'); }
+      else await loadOsmBuildings(lonDeg, latDeg);
+    }
+    await waitReady(bSets.length ? bSets[bSets.length - 1].p : null, 9000);
+  }
+  // sample a small neighbourhood, take the lowest point (the street, not a roof)
+  const cand = [[0, 0]];
+  for (const r of [12, 26, 42]) for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; cand.push([Math.cos(a) * r, Math.sin(a) * r]); }
+  const cartos = cand.map(([e, n]) => { const [lo, la] = moveLL(lon, lat, e, n); return C.Cartographic.fromRadians(lo, la, 0); });
+  let best = null;
+  try {
+    const res = await withTimeout(scene.sampleHeightMostDetailed(cartos, EXCLUDE), 14000);
+    if (res !== 'timeout') {
+      res.forEach((c, i) => { if (c && isFinite(c.height) && (best === null || c.height < best.height - 0.4)) best = { lon: c.longitude, lat: c.latitude, height: c.height, i }; });
+    }
+  } catch (e) { console.warn('sampleHeightMostDetailed', e); }
+  const c = S.car;
+  if (best) { c.lon = best.lon; c.lat = best.lat; c.h = best.height; c.onGround = true; }
+  else { c.lon = lon; c.lat = lat; c.h = 120; c.onGround = false; toast(M.fallFar, 'warn'); }
+  c.heading = (hdgDeg || 0) * DEG; c.vE = c.vN = c.vz = 0; c.steer = 0; c.pitch = c.roll = 0;
+  S.camHeading = c.heading; S.streetRef = c.h;
+  S.lastSpawn = { lonDeg, latDeg, hdgDeg, label };
+  S.air = PHYS.impulse; S.flags = {}; S.z96 = null; S.idleT = 0;
+  showLoading(null);
+  startDrive();
+}
+function startDrive() {
+  S.phase = 'drive';
+  scene.screenSpaceCameraController.enableInputs = false;
+  showCar(true);
+  $('#hud').hidden = false;
+  $('#touch').hidden = !isTouch;
+  updateTrimUI();
+  if (!S.stats || S.stats.t === 0) S.stats = freshStats();
+  setTimeout(() => toast(M.start[S.trim], S.trim === 'kizarmis' ? 'warn' : ''), 400);
+  if (!isTouch) setTimeout(() => { $('#hint').style.opacity = '0'; $('#hint').style.transition = 'opacity 1s'; }, 16000);
+}
+
+/* =====================================================================
+   PHYSICS STEP
+   ===================================================================== */
+function crash(speed) {
+  const now = S.t;
+  S.shake = Math.min(1, 0.25 + speed / 30);
+  if (now - S.lastCrashT > 0.6) {
+    S.stats.crashes++; addFine(15, 'crash');
+    toast(pick(speed > 8 ? M.crashHard : M.crashSoft), speed > 8 ? 'burnt' : 'warn', 'crash', 2.5);
+  }
+  S.lastCrashT = now;
+}
+const fineCd = {};
+function addFine(p, key, cd = 0) {
+  if (cd && fineCd[key] && S.t - fineCd[key] < cd) return;
+  fineCd[key] = S.t;
+  const before = S.stats.fines;
+  S.stats.fines += p;
+  if (before < 100 && S.stats.fines >= 100) toast(M.license, 'burnt');
+}
+function step(dt) {
+  const c = S.car, t = TRIMS[S.trim], k = S.keys, m = SPEC.massKg;
+  S.t += dt; S.stats.t += dt;
+  const airOK = S.musk || S.air > 1;
+  const throttle = k.up ? 1 : 0, brake = k.down ? 1 : 0;
+  const steerIn = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+  let fE = Math.sin(c.heading), fN = Math.cos(c.heading);
+  let F = 0;          // total thruster force this frame (N), drawn from the air tank
+  let upFrac = 0, rearFrac = 0;
+
+  if (c.onGround) {
+    let v = c.vE * fE + c.vN * fN;
+    let a = 0;
+    const aero = 0.00042 * v * Math.abs(v);
+    if (throttle) {
+      if (v < -0.5) a = PHYS.brakeA;
+      else {
+        const fade = Math.max(0, 1 - (v / PHYS.vmax) ** 2);
+        a = PHYS.baseA * fade;
+        if (k.boost) {
+          if (!t.boost) toast(M.noBoost, '', 'noboost', 12);
+          else if (airOK && v < PHYS.vmax) {
+            const extra = PHYS.a060(t.t060) - PHYS.baseA;
+            a += extra * fade; F += extra * m; rearFrac = 1;
+          }
+        }
+      }
+    }
+    if (brake) a = v > 0.5 ? -PHYS.brakeA : (v > -PHYS.vrev ? -PHYS.revA : 0);
+    if (!throttle && !brake) a = -Math.sign(v) * 0.45;
+    a -= aero;
+    const vPrev = v;
+    v += a * dt;
+    if (!throttle && !brake && Math.sign(v) !== Math.sign(vPrev)) v = 0;
+    v = clamp(v, -PHYS.vrev, PHYS.vmax);
+    // 0-96 timer
+    if (Math.abs(vPrev) < 0.4 && throttle) S.z96 = { t0: S.t };
+    if (S.z96 && !S.z96.done && rearFrac) S.z96.boost = true;
+    if (S.z96 && !S.z96.done && v >= PHYS.v60) {
+      const tt = S.t - S.z96.t0; S.z96.done = true;
+      if (tt < 4) {
+        if (!S.stats.best096 || tt < S.stats.best096) S.stats.best096 = tt;
+        $('#z96').textContent = `0–96 km/s: ${fmt(tt, 2)} sn (en iyi ${fmt(S.stats.best096, 2)})`;
+        toast(M.z96(tt, S.z96.boost ? t.t060 : 1.6), '', 'z96', 4);
+      }
+    }
+    if (S.z96 && (brake || !throttle)) S.z96 = S.z96.done ? S.z96 : null;
+    // steering (bicycle model)
+    const maxSteer = 0.62 / (1 + Math.abs(v) / 13);
+    c.steer += (steerIn * maxSteer - c.steer) * Math.min(1, dt * 9);
+    c.heading = wrapPi(c.heading + (v / 2.6) * Math.tan(c.steer) * dt);
+    fE = Math.sin(c.heading); fN = Math.cos(c.heading);
+    c.vE = fE * v; c.vN = fN * v; c.vz = 0;
+    // takeoff
+    if (k.space) {
+      if (!t.vertical) toast(M.noVert[S.trim], '', 'novert', 10);
+      else if (airOK) {
+        c.onGround = false; c.vz = 3.0; S.stats.takeoffs++;
+        addFine(10, 'fly', 5);
+        if (!S.flags.took) { S.flags.took = true; toast(M.takeoff1, 'warn'); }
+        else toast(pick(M.takeoff), '', 'takeoff', 8);
+      } else toast(M.air0ground(), 'burnt', 'emptyg', 10);
+    }
+    c.pitch += ((-a / 60) - c.pitch) * Math.min(1, dt * 6);
+    c.roll += ((c.steer * v / 50) - c.roll) * Math.min(1, dt * 6);
+  } else {
+    // ---------- airborne ----------
+    let Fup = 0, Ffwd = 0, Frot = 0;
+    const agl = S.ground !== undefined ? c.h - S.ground : 99;
+    if (k.space && t.vertical && airOK) Fup = m * G0 * 2.0;
+    else if (t.vertical && airOK && c.vz < -4.5 && agl < 14) {   // auto cushion, as in the demo
+      Fup = clamp(m * (G0 + (-c.vz - 2.5) * 2.2), 0, m * G0 * 3);
+    }
+    if (throttle && t.boost && airOK) { Ffwd = m * (PHYS.a060(t.t060) - PHYS.baseA); rearFrac = 1; }
+    if (brake && t.rot && airOK) Ffwd = -m * 6;
+    if (steerIn && t.rot && airOK) { c.heading = wrapPi(c.heading + steerIn * 1.3 * dt); Frot = m * 1.2; }
+    fE = Math.sin(c.heading); fN = Math.cos(c.heading);
+    c.vz += (Fup / m - G0) * dt;
+    c.vE += (Ffwd / m) * fE * dt; c.vN += (Ffwd / m) * fN * dt;
+    const hs = Math.hypot(c.vE, c.vN);
+    const drag = 0.00022 * hs * hs * dt;
+    if (hs > 0.01) { const s = Math.max(0, 1 - drag / hs); c.vE *= s; c.vN *= s; }
+    const hs2 = Math.hypot(c.vE, c.vN);
+    if (hs2 > PHYS.vmax * 1.15) { c.vE *= PHYS.vmax * 1.15 / hs2; c.vN *= PHYS.vmax * 1.15 / hs2; }
+    c.vz = Math.max(c.vz, -70);
+    F += Math.abs(Fup) + Math.abs(Ffwd) + Frot;
+    upFrac = Fup / (m * G0 * 2);
+    c.pitch += (clamp(Math.atan2(c.vz, Math.max(hs2, 10)) * 0.6, -0.5, 0.5) - c.pitch) * Math.min(1, dt * 4);
+    c.roll += ((steerIn * 0.25) - c.roll) * Math.min(1, dt * 4);
+    S.stats.flyT += dt; S.stats.flyDist += hs2 * dt;
+  }
+
+  // ---------- air tank ----------
+  const used = F * dt;
+  if (!S.musk) { S.air = Math.max(0, S.air - used); S.stats.airUsed += used; }
+  if (S.air < PHYS.impulse && S.battery > 0 && F === 0) {
+    const add = Math.min(PHYS.impulse / PHYS.refillSec * dt, PHYS.impulse - S.air);
+    S.air += add;
+    S.battery = Math.max(0, S.battery - (PHYS.refillKWh * add / PHYS.impulse) / SPEC.batteryKWh);
+  }
+  if (S.musk) S.air = PHYS.impulse;
+  S.fly.up = upFrac; S.fly.rear = rearFrac;
+
+  // ---------- horizontal move + collision ----------
+  const hs = Math.hypot(c.vE, c.vN);
+  const prevLon = c.lon, prevLat = c.lat;
+  let moved = false;
+  if (hs > 0.05) {
+    const dE = c.vE / hs, dN = c.vN / hs;
+    const d = castRay(c.lon, c.lat, c.h + (c.onGround ? 1.8 : 1.0), dE, dN, 0);
+    if (d !== undefined && d < hs * dt + 2.3) {
+      crash(hs);
+      const back = Math.min(hs * 0.25, 3);
+      c.vE = -dE * back; c.vN = -dN * back;
+    } else {
+      [c.lon, c.lat] = moveLL(c.lon, c.lat, c.vE * dt, c.vN * dt);
+      moved = true;
+      S.stats.dist += hs * dt;
+      if (c.onGround) S.battery = Math.max(0, S.battery - hs * dt / 1000 * PHYS.kWhPerKm / SPEC.batteryKWh);
+    }
+  }
+
+  // ---------- vertical ----------
+  const g = groundBelow(c);
+  S.ground = g;
+  if (c.onGround) {
+    if (g !== undefined) {
+      if (g > c.h + 2.0 && moved) {           // too steep to climb: it's a wall
+        c.lon = prevLon; c.lat = prevLat;
+        crash(hs); c.vE *= -0.2; c.vN *= -0.2;
+      } else if (g > c.h + 0.05 && !moved) {  // map detail refined under a parked car
+        c.h = g;
+      } else if (g < c.h - 0.8) {              // drove off an edge
+        c.onGround = false; c.vz = 0;
+      } else {
+        c.h += (g - c.h) * Math.min(1, dt * 14);
+        S.streetRef = S.streetRef == null ? c.h : S.streetRef + (Math.min(c.h, S.streetRef + 2) - S.streetRef) * Math.min(1, dt * 0.15);
+      }
+    }
+  } else {
+    const nh = c.h + c.vz * dt;
+    if (g !== undefined && nh <= g) {
+      const impact = -c.vz;
+      c.h = g; c.vz = 0; c.onGround = true;
+      const hsL = Math.hypot(c.vE, c.vN);
+      const v = c.vE * fE + c.vN * fN;
+      c.vE = fE * v; c.vN = fN * v;
+      if (impact > 9) { S.shake = 0.8; S.stats.crashes++; toast(M.hardLand, 'burnt', 'hard', 4); }
+      else if (!S.flags.soft && impact < 4.5) { S.flags.soft = true; toast(M.softLand); }
+      if (S.streetRef != null && g - S.streetRef > 6) { toast(M.roof, '', 'roof', 20); addFine(20, 'roof', 20); }
+      else if (S.streetRef == null || Math.abs(g - S.streetRef) < 3) S.streetRef = g;
+      void hsL;
+    } else {
+      c.h = nh;
+      if (g === undefined && c.h < -400) { toast(M.fallFar, 'warn'); respawn(); }
+    }
+  }
+
+  // toast slices pop when the thrusters fire
+  const popT = (!c.onGround || rearFrac) ? 0.75 : 0;
+  S.pop += (popT - S.pop) * Math.min(1, dt * (popT > S.pop ? 14 : 5));
+  S.stats.maxSpd = Math.max(S.stats.maxSpd, Math.hypot(c.vE, c.vN));
+  if (hs < 0.3 && c.onGround) S.idleT += dt; else S.idleT = 0;
+}
+
+/* =====================================================================
+   RENDER SYNC (car matrices + chase camera)
+   ===================================================================== */
+const CAMS = [
+  { name: 'Takip', range: 17, pitch: -0.2, lift: 1.4 },
+  { name: 'Geniş', range: 48, pitch: -0.38, lift: 1.4 },
+  { name: 'Tampon', range: 0.15, pitch: -0.04, lift: 1.5, front: 2.6 },
+  { name: 'Kuş bakışı', range: 140, pitch: -1.42, lift: 0 },
+];
+const _tgt = new C.Cartesian3(), _hpr = new C.HeadingPitchRange();
+function syncCar(dt) {
+  const c = S.car;
+  const enu = enuAt(c.lon, c.lat, c.h);
+  const sh = Math.sin(c.heading), ch = Math.cos(c.heading);
+  const f = [sh, ch, 0], l = [-ch, sh, 0], u = [0, 0, 1];
+  const cp = Math.cos(c.pitch), sp = Math.sin(c.pitch);
+  const f2 = [f[0] * cp + u[0] * sp, f[1] * cp + u[1] * sp, f[2] * cp + u[2] * sp];
+  const u2 = [u[0] * cp - f[0] * sp, u[1] * cp - f[1] * sp, u[2] * cp - f[2] * sp];
+  const cr = Math.cos(c.roll), sr = Math.sin(c.roll);
+  const l3 = [l[0] * cr + u2[0] * sr, l[1] * cr + u2[1] * sr, l[2] * cr + u2[2] * sr];
+  const u3 = [u2[0] * cr - l[0] * sr, u2[1] * cr - l[1] * sr, u2[2] * cr - l[2] * sr];
+  _R[0] = f2[0]; _R[1] = f2[1]; _R[2] = f2[2]; _R[3] = 0;
+  _R[4] = l3[0]; _R[5] = l3[1]; _R[6] = l3[2]; _R[7] = 0;
+  _R[8] = u3[0]; _R[9] = u3[1]; _R[10] = u3[2]; _R[11] = 0;
+  _R[12] = 0; _R[13] = 0; _R[14] = 0; _R[15] = 1;
+  C.Matrix4.multiply(enu, _R, _M);
+  CAR.body.modelMatrix = C.Matrix4.clone(_M, CAR.body.modelMatrix);
+  _v3.x = 0; _v3.y = 0; _v3.z = S.pop;
+  CAR.toastP.modelMatrix = C.Matrix4.multiplyByTranslation(_M, _v3, CAR.toastP.modelMatrix || new C.Matrix4());
+  const up = S.fly.up, rear = S.fly.rear;
+  CAR.upFlame.show = up > 0.04;
+  if (CAR.upFlame.show) {
+    _v3.x = 0; _v3.y = 0; _v3.z = 0.36;
+    C.Matrix4.multiplyByTranslation(_M, _v3, _M2);
+    _v3.x = 1; _v3.y = 1; _v3.z = 0.35 + up * (0.85 + Math.random() * 0.3);
+    CAR.upFlame.modelMatrix = C.Matrix4.multiplyByScale(_M2, _v3, CAR.upFlame.modelMatrix || new C.Matrix4());
+  }
+  CAR.rearFlame.show = rear > 0.04;
+  if (CAR.rearFlame.show) {
+    _v3.x = -2.38; _v3.y = 0; _v3.z = 0.78;
+    C.Matrix4.multiplyByTranslation(_M, _v3, _M2);
+    _v3.x = 0.7 + Math.random() * 0.5; _v3.y = 1; _v3.z = 1;
+    CAR.rearFlame.modelMatrix = C.Matrix4.multiplyByScale(_M2, _v3, CAR.rearFlame.modelMatrix || new C.Matrix4());
+  }
+  // camera
+  const cam = CAMS[S.camMode];
+  const want = c.heading;
+  S.camHeading = wrapPi(S.camHeading + wrapPi(want - S.camHeading) * (1 - Math.exp(-dt * (S.camMode === 2 ? 20 : 4))));
+  const hs = Math.hypot(c.vE, c.vN);
+  let fx = 0;
+  if (cam.front) fx = cam.front;
+  _v3.x = Math.sin(c.heading) * fx; _v3.y = Math.cos(c.heading) * fx; _v3.z = cam.lift;
+  C.Matrix4.multiplyByPoint(enu, _v3, _tgt);
+  S.shake = Math.max(0, S.shake - dt * 1.6);
+  const sk = S.shake * S.shake;
+  _hpr.heading = S.camHeading + (Math.random() - 0.5) * 0.06 * sk;
+  _hpr.pitch = cam.pitch + (Math.random() - 0.5) * 0.06 * sk + (S.camMode < 2 && !c.onGround ? -0.06 : 0);
+  _hpr.range = cam.range + (S.camMode < 2 ? Math.min(hs * 0.09, 9) : 0);
+  camera.lookAt(_tgt, _hpr);
+  C.Cartesian3.clone(camera.directionWC, sun.direction);
+}
+
+/* =====================================================================
+   HUD + event checks
+   ===================================================================== */
+let hudT = 0, chkT = 0;
+function updHUD() {
+  const c = S.car;
+  const hs = Math.hypot(c.vE, c.vN) * 3.6;
+  $('#spd').textContent = fmt(Math.round(hs));
+  const agl = S.ground !== undefined ? Math.max(0, c.h - S.ground) : null;
+  const tag = $('#stateTag');
+  tag.textContent = c.onGround ? 'YERDE' : (c.vz > 0.5 ? 'TIRMANIŞ' : 'HAVADA');
+  tag.classList.toggle('air', !c.onGround);
+  $('#alt').textContent = agl == null ? '—' : `yerden ${fmt(agl, agl < 10 ? 1 : 0)} m`;
+  const af = S.air / PHYS.impulse;
+  $('#airBar').style.width = (af * 100).toFixed(1) + '%';
+  $('#airBarW').classList.toggle('low', af < 0.2);
+  const hoverLeft = S.air / PHYS.hoverN;
+  const narrow = innerWidth < 500;
+  $('#airTxt').textContent = S.musk ? (narrow ? 'Sonsuz' : 'Sonsuz (Musk Modu)') : narrow ? `${fmt(hoverLeft, 1)} sn uçuş` : (af >= 0.999 ? `Dolu · ${fmt(hoverLeft, 1)} sn uçuş` : `${fmt(hoverLeft, 1)} sn uçuş · dolum ${fmtDur((1 - af) * PHYS.refillSec)}`);
+  $('#batBar').style.width = (S.battery * 100).toFixed(1) + '%';
+  $('#batBarW').classList.toggle('low', S.battery < 0.15);
+  $('#batTxt').textContent = narrow ? `${fmt(S.battery * PHYS.rangeKm)} km` : `%${fmt(S.battery * 100)} · ${fmt(S.battery * PHYS.rangeKm)} km`;
+  $('#fine').textContent = fmt(S.stats.fines);
+  if (S.mission) {
+    const d = distM(c.lon, c.lat, S.mission.lon, S.mission.lat);
+    $('#mDist').textContent = d > 1000 ? fmt(d / 1000, 1) + ' km' : fmt(d) + ' m';
+    const rel = bearingTo(c.lon, c.lat, S.mission.lon, S.mission.lat) - S.camHeading;
+    $('#mArrow').style.transform = `rotate(${rel / DEG}deg)`;
+  }
+}
+function checks() {
+  const c = S.car, f = S.flags;
+  const kmh = Math.hypot(c.vE, c.vN) * 3.6;
+  const agl = S.ground !== undefined ? c.h - S.ground : 0;
+  const af = S.air / PHYS.impulse;
+  if (c.onGround) {
+    if (kmh > 52) { addFine(5, 'speed', 12); if (!f.s50) { f.s50 = true; toast(M.spd50); } }
+    if (kmh > 150 && !f.s150) { f.s150 = true; toast(M.spd150, 'warn'); }
+    if (kmh > 300 && !f.s300) { f.s300 = true; toast(M.spd300, 'burnt'); }
+  }
+  if (!S.musk) {
+    if (af < 0.5 && !f.a50) { f.a50 = true; toast(M.air50); }
+    if (af < 0.2 && !f.a20) { f.a20 = true; toast(M.air20, 'warn'); }
+    if (af < 0.01 && !c.onGround && !f.a0) { f.a0 = true; toast(M.air0, 'burnt'); }
+    if (af > 0.6) { f.a50 = f.a20 = f.a0 = false; }
+  }
+  if (!c.onGround && agl > 120 && !f.h120) { f.h120 = true; toast(M.alt120, 'warn'); }
+  if (!c.onGround && agl > 300 && !f.h300) { f.h300 = true; toast(M.alt300, 'burnt'); }
+  for (const ap of AIRPORTS) {
+    if (distM(c.lon, c.lat, ap.lon * DEG, ap.lat * DEG) < 6000) { if (!f['ap' + ap.name]) { f['ap' + ap.name] = true; addFine(50, 'ap'); toast(M.airport(ap.name), 'burnt'); } }
+  }
+  if (S.idleT > 25 && !f.idle) { f.idle = true; toast(cityOf(c) === 'İzmir' ? M.idleIzmir : M.idle); }
+  if (S.idleT < 1) f.idle = false;
+  if (S.mission && !S.mission.done) {
+    const d = distM(c.lon, c.lat, S.mission.lon, S.mission.lat);
+    if (d < 35) finishMission(true);
+  }
+  if (S.mapMode === 'free' && !qs.get('demo') && bCenter && !bLoading) {
+    const d = distM(c.lon, c.lat, bCenter[0] * DEG, bCenter[1] * DEG);
+    if (d > 450) loadOsmBuildings(c.lon / DEG, c.lat / DEG);
+  }
+}
+function cityOf(c) {
+  let best = null, bd = 1e12;
+  for (const s of SPOTS) { const d = distM(c.lon, c.lat, s.lon * DEG, s.lat * DEG); if (d < bd) { bd = d; best = s; } }
+  return bd < 40000 ? best.city : null;
+}
+
+/* =====================================================================
+   MAIN LOOP
+   ===================================================================== */
+let lastT = performance.now();
+function frame(now) {
+  const dt = Math.min(0.066, (now - lastT) / 1000); lastT = now;
+  if (S.phase === 'drive') {
+    try { step(dt); } catch (e) { console.error(e); }
+    syncCar(dt);
+    hudT += dt; chkT += dt;
+    if (hudT > 0.066) { hudT = 0; updHUD(); }
+    if (chkT > 0.25) { chkT = 0; checks(); }
+  } else if (S.phase === 'menu' && S.spot) {
+    S.orbit += dt * 0.06;
+    const tgt = C.Cartesian3.fromDegrees(S.spot.lon, S.spot.lat, S.spotH || 0);
+    _hpr.heading = S.orbit; _hpr.pitch = -0.5; _hpr.range = 650;
+    camera.lookAt(tgt, _hpr);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================================
+   INPUT
+   ===================================================================== */
+const KEYMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'space', ShiftLeft: 'boost', ShiftRight: 'boost' };
+addEventListener('keydown', (e) => {
+  if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  const k = KEYMAP[e.code];
+  if (k && S.phase === 'drive') { S.keys[k] = true; e.preventDefault(); return; }
+  if (S.phase !== 'drive') { if (e.code === 'Escape') closeOverlays(); return; }
+  if (e.code === 'KeyC') cycleCam();
+  else if (e.code === 'KeyR') respawn();
+  else if (e.code === 'KeyH') toggleRec();
+  else if (e.code === 'KeyG') openRoute();
+  else if (e.code === 'Escape') { if (anyOverlay()) closeOverlays(); else openMenu(); }
+});
+addEventListener('keyup', (e) => { const k = KEYMAP[e.code]; if (k) S.keys[k] = false; });
+addEventListener('blur', () => { S.keys = {}; });
+document.querySelectorAll('#touch .tb').forEach((b) => {
+  const k = b.dataset.key;
+  const on = (e) => { e.preventDefault(); S.keys[k] = true; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (_) {} };
+  const off = () => { S.keys[k] = false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', on);
+  b.addEventListener('pointerup', off);
+  b.addEventListener('pointercancel', off);
+  b.addEventListener('lostpointercapture', off);
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+});
+function cycleCam() { S.camMode = (S.camMode + 1) % CAMS.length; toast('Kamera: ' + CAMS[S.camMode].name, '', 'cam', 0.3); }
+function toggleRec() { S.rec = !S.rec; document.body.classList.toggle('rec', S.rec); if (S.rec) toast('Kayıt modu: arayüz gizlendi. Çıkmak için H.', '', 'rec', 1); }
+function respawn() {
+  if (!S.lastSpawn) return;
+  const ls = S.lastSpawn;
+  toast(M.reset, '', 'reset', 2);
+  spawnAt(ls.lonDeg, ls.latDeg, ls.hdgDeg, ls.label);
+}
+
+/* map clicks (pick start / pick B) */
+const handler = new C.ScreenSpaceEventHandler(scene.canvas);
+handler.setInputAction((ev) => {
+  if (!S.pickFor) return;
+  let cart;
+  try { if (scene.pickPositionSupported) cart = scene.pickPosition(ev.position); } catch (e) {}
+  if (!cart) cart = camera.pickEllipsoid(ev.position);
+  if (!cart) { toast('Oraya dokunamadım, haritada binaların ya da yolun üstüne dokun.', 'warn', 'pickmiss', 2); return; }
+  const cg = C.Cartographic.fromCartesian(cart);
+  const what = S.pickFor; S.pickFor = null;
+  $('#pickBanner').hidden = true;
+  if (what === 'start') {
+    scene.screenSpaceCameraController.enableInputs = false;
+    S.spot = { id: 'custom', city: '', name: 'Seçtiğin nokta', lat: cg.latitude / DEG, lon: cg.longitude / DEG, hdg: 0 };
+    spawnAt(S.spot.lon, S.spot.lat, 0, S.spot.name);
+  } else if (what === 'B') {
+    S.routeB = { lon: cg.longitude / DEG, lat: cg.latitude / DEG, name: 'Haritada seçtiğin nokta' };
+    $('#routeSel').value = 'custom';
+    $('#route').hidden = false;
+    renderRoute();
+    if (S.phase === 'drive') scene.screenSpaceCameraController.enableInputs = false;
+  }
+}, C.ScreenSpaceEventType.LEFT_CLICK);
+function beginPick(what) {
+  S.pickFor = what;
+  hideAll();
+  $('#pickTxt').textContent = what === 'start' ? 'Kalkış noktasına dokun (haritayı sürükleyip yakınlaştırabilirsin)' : 'Varış noktasına (B) dokun';
+  $('#pickBanner').hidden = false;
+  if (what === 'start') {
+    S.phase = 'pick';
+    camera.lookAtTransform(C.Matrix4.IDENTITY);
+    scene.screenSpaceCameraController.enableInputs = true;
+  }
+}
+$('#pickCancel').onclick = () => {
+  const was = S.pickFor; S.pickFor = null; $('#pickBanner').hidden = true;
+  if (was === 'start') openMenu(); else if (was === 'B') { $('#route').hidden = false; }
+};
+
+/* =====================================================================
+   UI: menu / overlays
+   ===================================================================== */
+function anyOverlay() { return ['#route', '#result', '#science'].some((s) => !$(s).hidden); }
+function closeOverlays() {
+  ['#route', '#result', '#science'].forEach((s) => ($(s).hidden = true));
+  if (S.phase === 'drive') scene.screenSpaceCameraController.enableInputs = false;
+}
+function hideAll() { ['#menu', '#route', '#result', '#science'].forEach((s) => ($(s).hidden = true)); }
+function openMenu() {
+  S.keys = {};
+  hideAll();
+  $('#hud').hidden = true; $('#touch').hidden = true;
+  showCar(false);
+  S.phase = 'menu';
+  camera.lookAtTransform(C.Matrix4.IDENTITY);
+  scene.screenSpaceCameraController.enableInputs = false;
+  $('#menu').hidden = false;
+}
+function buildMenu() {
+  const wrap = $('#trims');
+  wrap.innerHTML = '';
+  for (const t of Object.values(TRIMS)) {
+    const b = document.createElement('button');
+    b.className = 'trim'; b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.k = t.key;
+    b.innerHTML = `<div><div class="tn">${t.name}</div><div class="tr">Tesla: ${t.real}</div></div>
+      <span class="legal ${t.lc}">${t.legal}</span>
+      <dl><dt>0–96 km/s</dt><dd>&lt;${fmt(t.t060, 2)} sn</dd><dt>Koltuk</dt><dd>${t.seats}</dd><dt>İtici</dt><dd>${t.thr}</dd><dt>Uçar mı</dt><dd>${t.fly}</dd></dl>`;
+    b.onclick = () => { S.trim = t.key; updateTrimUI(); };
+    wrap.appendChild(b);
+  }
+  $('#common').innerHTML = `<span>Hepsinde: tepe hız <b>${fmt(PHYS.vmax * 3.6)}+ km/s</b></span><span>menzil <b>${fmt(PHYS.rangeKm)}+ km</b></span><span>itici tankı <b>${SPEC.copvL} L</b> basınçlı hava</span>`;
+  const sel = $('#spotSel');
+  let lastCity = null, og = null;
+  for (const s of SPOTS) {
+    if (s.city !== lastCity) { og = document.createElement('optgroup'); og.label = s.city; sel.appendChild(og); lastCity = s.city; }
+    const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; og.appendChild(o);
+  }
+  const want = SPOTS.find((s) => s.id === qs.get('spot')) || SPOTS.find((s) => s.id === CONFIG.DEFAULT_SPOT);
+  sel.value = want.id; S.spot = want;
+  sel.onchange = () => { S.spot = SPOTS.find((s) => s.id === sel.value); S.spotH = 0; probeSpotHeight(); };
+  const rs = $('#routeSel');
+  for (const r of ROUTES) { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; rs.appendChild(o); }
+  const oc = document.createElement('option'); oc.value = 'custom'; oc.textContent = 'Aracın olduğu yer → haritada seçtiğin nokta'; rs.appendChild(oc);
+  rs.onchange = renderRoute;
+  updateTrimUI();
+  const lat = parseFloat(qs.get('lat')), lon = parseFloat(qs.get('lon'));
+  if (isFinite(lat) && isFinite(lon)) { S.spot = { id: 'custom', city: '', name: 'Paylaşılan nokta', lat, lon, hdg: 0 }; }
+}
+function updateTrimUI() {
+  document.querySelectorAll('.trim').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.k === S.trim)));
+  $('#trimLabel').textContent = TRIMS[S.trim].name + ' · ' + TRIMS[S.trim].real;
+  const fly = document.querySelector('#touch .fly');
+  if (fly) fly.style.opacity = TRIMS[S.trim].vertical ? '1' : '.45';
+}
+async function probeSpotHeight() {
+  if (!S.spot || S.mapMode !== 'google') return;
+  try {
+    const r = await withTimeout(scene.sampleHeightMostDetailed([C.Cartographic.fromDegrees(S.spot.lon, S.spot.lat, 0)]), 8000);
+    if (r !== 'timeout' && r[0] && isFinite(r[0].height)) S.spotH = r[0].height;
+  } catch (e) {}
+}
+$('#bStart').onclick = () => {
+  if (!S.mapReady) { toast('Harita daha yükleniyor, bir saniye.', '', 'notready', 2); return; }
+  S.stats = freshStats(); S.mission = null; $('#mission').hidden = true; removeBeacon();
+  const s = S.spot;
+  spawnAt(s.lon, s.lat, s.hdg, s.name);
+};
+$('#bPickMap').onclick = () => { if (S.mapReady) beginPick('start'); };
+$('#bGeo').onclick = () => {
+  if (!navigator.geolocation) { toast('Tarayıcın konum vermiyor. Haritadan seçebilirsin.', 'warn'); return; }
+  navigator.geolocation.getCurrentPosition(
+    (p) => { S.spot = { id: 'geo', city: '', name: 'Senin mahallen', lat: p.coords.latitude, lon: p.coords.longitude, hdg: 0 }; S.stats = freshStats(); spawnAt(S.spot.lon, S.spot.lat, 0, S.spot.name); },
+    () => toast('Konuma izin verilmedi. Sorun değil, haritadan seçebilirsin.', 'warn'),
+    { enableHighAccuracy: true, timeout: 10000 });
+};
+$('#bSci').onclick = () => { renderScience(); $('#science').hidden = false; };
+$('#bRoute2').onclick = () => openRoute();
+$('#bRoute').onclick = () => openRoute();
+$('#bCam').onclick = cycleCam;
+$('#bRec').onclick = toggleRec;
+$('#recExit').onclick = toggleRec;
+$('#bReset').onclick = respawn;
+$('#bMenu').onclick = openMenu;
+$('#bMusk').onclick = () => { S.musk = !S.musk; $('#muskChip').hidden = !S.musk; $('#bMusk').classList.toggle('primary', S.musk); toast(S.musk ? M.muskOn : M.muskOff, S.musk ? 'warn' : ''); };
+document.querySelectorAll('[data-close]').forEach((b) => (b.onclick = () => { $('#' + b.dataset.close).hidden = true; if (S.phase === 'menu') $('#menu').hidden = false; }));
+$('#keyInput').value = lsGet('kt_gkey') || '';
+$('#keySave').onclick = () => { const v = $('#keyInput').value.trim(); if (!v) return; lsSet('kt_gkey', v); location.search = ''; };
+$('#keyClear').onclick = () => { lsSet('kt_gkey', null); $('#keyInput').value = ''; location.reload(); };
+$('#forceFree').onclick = () => { const u = new URL(location.href); u.searchParams.set('mod', 'free'); location.href = u.toString(); };
+
+/* =====================================================================
+   "GİDEBİLİR MİYİM?" — route analysis
+   ===================================================================== */
+function openRoute() {
+  if (S.phase === 'drive') S.keys = {};
+  $('#menu').hidden = true;
+  $('#route').hidden = false;
+  if (S.phase === 'drive') { $('#routeSel').value = S.routeB ? 'custom' : $('#routeSel').value; }
+  renderRoute();
+}
+function currentRoute() {
+  const id = $('#routeSel').value;
+  if (id === 'custom') {
+    const a = S.phase === 'drive' ? { lon: S.car.lon / DEG, lat: S.car.lat / DEG, name: 'Aracın olduğu yer' } : { lon: S.spot.lon, lat: S.spot.lat, name: S.spot.name };
+    return { id: 'custom', a, b: S.routeB, name: (a.name) + ' → ' + (S.routeB ? S.routeB.name : '?') };
+  }
+  const r = ROUTES.find((x) => x.id === id);
+  const A = SPOTS.find((s) => s.id === r.a), B = SPOTS.find((s) => s.id === r.b);
+  return { id: r.id, a: A, b: B, name: r.name, note: r.note, aSpot: A };
+}
+function analyse(dist, trimKey) {
+  const t = TRIMS[trimKey];
+  const road = dist * SPEC.detour;
+  const hopTime = PHYS.hoverSec + 1.4;
+  const hopLegal = (50 / 3.6) * hopTime;
+  const hopWild = PHYS.vmax * hopTime;
+  const flyRes = (hop) => {
+    const hops = Math.max(1, Math.ceil(dist / hop));
+    const refills = hops - 1;
+    const sec = hops * hopTime + refills * PHYS.refillSec;
+    return { hops, refills, sec, kwh: refills * PHYS.refillKWh, charges: refills * PHYS.refillKWh / SPEC.batteryKWh };
+  };
+  return {
+    t, road,
+    legal: t.vertical ? flyRes(hopLegal) : null,
+    wild: t.vertical ? flyRes(hopWild) : null,
+    hopLegal, hopWild,
+    carSec: road / 1000 / SPEC.cityKmh * 3600,
+    walkSec: road / 1000 / SPEC.walkKmh * 3600,
+    muskSec: dist / (150 / 3.6),
+  };
+}
+function renderRoute() {
+  const r = currentRoute();
+  const out = $('#raOut');
+  if (!r.b) {
+    out.innerHTML = `<div class="ra-item"><div class="t">B noktası seçilmedi</div><div class="d">"B noktasını haritada seç" ile varış noktasına dokun.</div><div class="v">?</div></div>`;
+    $('#bDrive').disabled = true; $('#raFoot').textContent = ''; return;
+  }
+  $('#bDrive').disabled = false;
+  const dist = distM(r.a.lon * DEG, r.a.lat * DEG, r.b.lon * DEG, r.b.lat * DEG);
+  const A = analyse(dist, S.trim);
+  const dTxt = dist > 1000 ? fmt(dist / 1000, 1) + ' km' : fmt(dist) + ' m';
+  let verdict, vText, no = true;
+  if (!A.legal) {
+    verdict = 'UÇAMAZSIN';
+    vText = `${A.t.name} versiyonunda yukarı itici yok. Bu rota senin için sadece trafik: yaklaşık ${fmtDur(A.carSec)}. Uçmak istiyorsan Kızarmış'ı seç (o da davetiyeli).`;
+  } else if (A.legal.hops === 1) {
+    verdict = 'GİDERSİN!'; no = false;
+    vText = `Tek zıplamada oradasın. Fırına ekmek almaya tam ideal. Dönüş için ${fmtDur(PHYS.refillSec)} pompa beklemen gerekecek ama.`;
+  } else if (A.wild.hops === 1) {
+    verdict = 'KURALLARI ÇİĞNERSEN'; no = false;
+    vText = `370 km/s ile kalkarsan tek zıplamada gidersin. 50 km/s sınırına uyarsan ${A.legal.hops} zıplama ve ${fmtDur(A.legal.sec)}. Seçim senin, ceza puanı da.`;
+  } else {
+    verdict = 'GİDEMEZSİN';
+    vText = `Uçarak değil, zıplayarak gidersin: ${fmt(A.legal.hops)} zıplama, her birinin arasında ${fmtDur(PHYS.refillSec)} pompa. Toplam ${fmtDur(A.legal.sec)}. Yürüsen ${fmtDur(A.walkSec)}.`;
+  }
+  out.innerHTML = `
+    <div class="ra-dist"><b class="num">${dTxt}</b><span class="label">kuş uçuşu · ${r.name}</span></div>
+    <div class="ra-table" style="margin-top:12px">
+      ${A.legal ? `<div class="ra-item hot"><div class="t">Uçarak, kurallara uyarak</div><div class="d">50 km/s'de kalk, ~${fmt(A.hopLegal)} m zıpla, ${fmtDur(PHYS.refillSec)} pompa bekle. ${fmt(A.legal.hops)} zıplama · ${fmt(A.legal.kwh)} kWh (${fmt(A.legal.charges, 1)} tam şarj)</div><div class="v">${fmtDur(A.legal.sec)}</div></div>
+      <div class="ra-item"><div class="t">Uçarak, kuralları umursamadan</div><div class="d">370 km/s'de kalkış, ~${fmt(A.hopWild)} m'lik zıplama. ${fmt(A.wild.hops)} zıplama.</div><div class="v">${fmtDur(A.wild.sec)}</div></div>` :
+      `<div class="ra-item hot"><div class="t">Uçarak</div><div class="d">${A.t.name} versiyonu uçamaz.</div><div class="v">—</div></div>`}
+      <div class="ra-item"><div class="t">Musk Modu (sunumdaki gibi)</div><div class="d">Sonsuz hava, 150 km/s'de dümdüz uçuş. Fizik dışı.</div><div class="v">${fmtDur(A.muskSec)}</div></div>
+      <div class="ra-item"><div class="t">Arabayla, şehir trafiğinde</div><div class="d">Yol ~${fmt(A.road / 1000, 1)} km, ortalama ${SPEC.cityKmh} km/s. 0–96'nın burada hiçbir önemi yok.</div><div class="v">${fmtDur(A.carSec)}</div></div>
+      <div class="ra-item"><div class="t">Yürüyerek</div><div class="d">Saatte ${SPEC.walkKmh} km. Ceza puanı sıfır.</div><div class="v">${fmtDur(A.walkSec)}</div></div>
+    </div>
+    <div class="verdict" style="margin-top:12px"><div class="big ${no ? 'no' : ''}">${verdict}</div><p>${vText}${r.note ? ' ' + r.note : ''}</p></div>`;
+  $('#raFoot').textContent = `Hesap: ${TRIMS[S.trim].name} versiyonu. Uçuş ~${fmt(PHYS.hoverSec, 1)} sn (600 L hava, ${SPEC.bar} bar varsayımı). Pompa ${SPEC.compressorKW} kW varsayımı. Yol/kuş uçuşu oranı ${SPEC.detour}. Hepsi kaba hesap.`;
+}
+$('#bPickB').onclick = () => {
+  if (!S.mapReady) return;
+  $('#route').hidden = true;
+  if (S.phase !== 'drive') { beginPick('start'); toast('Önce kalkış noktasını seç, sonra Gidebilir miyim? menüsünden B\'yi seç.', '', 'pickA', 5); return; }
+  S.pickFor = 'B';
+  scene.screenSpaceCameraController.enableInputs = false;
+  $('#pickTxt').textContent = 'Varış noktasına (B) dokun. İstersen önce kamerayı Kuş bakışı yap (C).';
+  $('#pickBanner').hidden = false;
+};
+$('#bDrive').onclick = async () => {
+  const r = currentRoute();
+  if (!r.b) return;
+  $('#route').hidden = true;
+  S.stats = freshStats();
+  S.mission = { name: r.name, lon: r.b.lon * DEG, lat: r.b.lat * DEG, bName: r.b.name, routeId: r.id, done: false, dist: distM(r.a.lon * DEG, r.a.lat * DEG, r.b.lon * DEG, r.b.lat * DEG) };
+  $('#mName').textContent = r.b.name;
+  $('#mission').hidden = false;
+  placeBeacon(r.b.lon, r.b.lat);
+  if (r.id !== 'custom' || S.phase !== 'drive') await spawnAt(r.a.lon, r.a.lat, (bearingTo(r.a.lon * DEG, r.a.lat * DEG, r.b.lon * DEG, r.b.lat * DEG) / DEG), r.a.name);
+  else startDrive();
+  toast(`Hedef: ${r.b.name}. Bakalım uçarak gidebilecek misin.`, '', 'mstart', 1);
+};
+let beacon = null;
+function placeBeacon(lonDeg, latDeg) {
+  removeBeacon();
+  beacon = viewer.entities.add({
+    position: C.Cartesian3.fromDegrees(lonDeg, latDeg, (S.car.h || 0) + 90),
+    cylinder: { length: 260, topRadius: 5, bottomRadius: 5, material: C.Color.fromCssColorString('#ff5b1f').withAlpha(0.45), outline: false },
+  });
+  EXCLUDE.push(beacon);
+  scene.sampleHeightMostDetailed([C.Cartographic.fromDegrees(lonDeg, latDeg, 0)], EXCLUDE).then((r) => {
+    if (beacon && r[0] && isFinite(r[0].height)) beacon.position = C.Cartesian3.fromDegrees(lonDeg, latDeg, r[0].height + 120);
+  }).catch(() => {});
+}
+function removeBeacon() { if (beacon) { viewer.entities.remove(beacon); const i = EXCLUDE.indexOf(beacon); if (i >= 0) EXCLUDE.splice(i, 1); beacon = null; } }
+
+/* =====================================================================
+   RESULT
+   ===================================================================== */
+function finishMission(arrived) {
+  const m = S.mission; if (!m) return;
+  m.done = true;
+  S.keys = {};
+  const st = S.stats;
+  $('#resKicker').textContent = m.name;
+  $('#resTitle').textContent = arrived ? 'Vardın!' : 'Görev bitti';
+  const stats = [
+    ['Süre', fmtDur(st.t)], ['Uçuş süresi', fmt(st.flyT, 1) + ' sn'], ['Havada gidilen', fmt(st.flyDist) + ' m'],
+    ['Çarpma', fmt(st.crashes)], ['Ceza puanı', fmt(st.fines)], ['En yüksek hız', fmt(st.maxSpd * 3.6) + ' km/s'],
+  ];
+  $('#resStats').innerHTML = stats.map(([a, b]) => `<div class="stat"><span class="label">${a}</span><b>${b}</b></div>`).join('');
+  const share = st.flyDist / Math.max(1, st.dist + (S.car.onGround ? 0 : 0));
+  let big, txt;
+  if (st.crashes === 0 && st.fines < 30) { big = 'TEMİZ!'; txt = 'Hiçbir yere çarpmadan vardın. Gerçek hayatta bu kadar düzgün sürene uçan araba vermezler, sıkıcı bulurlar.'; }
+  else if (st.crashes > 3) { big = 'VARDIN SAYILIR'; txt = `Vardın ama ${st.crashes} kez bir yere girdin. Gerçek hayatta şu an ehliyetsiz, arabasız ve muhtemelen ünlüsün.`; }
+  else { big = 'VARDIN'; txt = `Yolun %${fmt(Math.min(100, share * 100))}'ini havada geçtin. Gerisi düz, sıradan, trafikli yer. Tıpkı gerçek hayat gibi.`; }
+  if (m.routeId === 'korfez') txt += ' Körfezi uçarak geçtiğini iddia edenlere vapur saatlerini hatırlat.';
+  $('#resBig').textContent = big; $('#resText').textContent = txt;
+  $('#shareMsg').textContent = '';
+  $('#result').hidden = false;
+  $('#mission').hidden = true;
+  removeBeacon();
+  S.mission = null;
+}
+$('#bAgain').onclick = () => { $('#result').hidden = true; openRoute(); };
+$('#bShare').onclick = async () => {
+  const st = S.stats;
+  const url = new URL(location.href); url.search = ''; url.searchParams.set('trim', S.trim); if (S.spot && S.spot.id && !['custom', 'geo'].includes(S.spot.id)) url.searchParams.set('spot', S.spot.id);
+  const text = `Kessler Toaster ile ${$('#resKicker').textContent}: ${fmt(st.flyT, 1)} sn uçtum, ${st.crashes} kez bir yere girdim, ${st.fines} ceza puanı yedim. Sen gidebilir misin?`;
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Kessler Toaster', text, url: url.toString() }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text + ' ' + url.toString()); $('#shareMsg').textContent = 'Kopyalandı. Story\'ne yapıştır.'; }
+  catch (e) { $('#shareMsg').textContent = text + ' ' + url.toString(); }
+};
+
+/* =====================================================================
+   SCIENCE PANEL
+   ===================================================================== */
+function renderScience() {
+  const rows1 = [
+    ['Versiyonlar', 'Performance · Thrust · Rocket'],
+    ['0–96 km/s', '<1,6 · <0,9 · <0,59 sn'],
+    ['Tepe hız', fmt(PHYS.vmax * 3.6) + '+ km/s'],
+    ['Menzil', fmt(PHYS.rangeKm) + '+ km'],
+    ['İticiler', '10 adet soğuk gaz (Rocket)'],
+    ['Basınçlı hava', SPEC.copvL + ' L, COPV tanklarda'],
+    ['İtici kuvveti', 'lastik tutuşunun 4–5 katı'],
+    ['Emme fanları', '2 G\'ye kadar, ters bile tutar'],
+    ['Rocket', 'tek koltuk, yol onayı yok, davetiyeli'],
+    ['Üretim', '2028, fiyat açıklanmadı'],
+  ];
+  const rows2 = [
+    ['Tank basıncı', SPEC.bar + ' bar'],
+    ['Tanktaki hava', '≈ ' + fmt(PHYS.airKg) + ' kg'],
+    ['Soğuk gaz özgül itkisi', SPEC.isp + ' sn'],
+    ['Toplam itki', '≈ ' + fmt(PHYS.impulse / 1000) + ' kN·s'],
+    ['Araç kütlesi', '≈ ' + fmt(SPEC.massKg) + ' kg (~4000 lb)'],
+    ['Havada asılı kalma', '≈ ' + fmt(PHYS.hoverSec, 1) + ' sn'],
+    ['Maks. itici kuvveti', '≈ ' + fmt(PHYS.maxThrustN / 1000) + ' kN'],
+    ['Tankı doldurma enerjisi', '≈ ' + fmt(PHYS.refillKWh) + ' kWh'],
+    ['Pompa gücü', SPEC.compressorKW + ' kW → ' + fmtDur(PHYS.refillSec)],
+    ['Batarya', '≈ ' + SPEC.batteryKWh + ' kWh (açıklanmadı)'],
+    ['Bir tank hava', 'bataryanın %' + fmt(PHYS.refillKWh / SPEC.batteryKWh * 100) + '\'i ≈ ' + fmt(PHYS.refillKWh / PHYS.kWhPerKm) + ' km menzil'],
+  ];
+  const tr = (rows) => rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+  $('#sciBody').innerHTML = `<h3>Tesla'nın açıkladığı (15 Ekim 2026)</h3><table>${tr(rows1)}</table><h3 style="margin-top:14px">Bizim varsayım ve hesaplarımız</h3><table>${tr(rows2)}</table>`;
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+buildMenu();
+camera.setView({ destination: C.Cartesian3.fromDegrees(S.spot.lon, S.spot.lat - 0.006, 700), orientation: { heading: 0, pitch: -0.5, roll: 0 } });
+initMap().then(() => { probeSpotHeight(); if (qs.get('autostart')) $('#bStart').click(); });
+})();
+</script>
+</body>
+</html>
