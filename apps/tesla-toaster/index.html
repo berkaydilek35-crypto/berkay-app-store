@@ -493,7 +493,7 @@ const S = {
   keys: {}, camMode: 0, camHeading: 0, orbit: 0, shake: 0, pop: 0, fly: { up: 0, rear: 0 },
   stats: null, mission: null, pickFor: null, lastCrashT: -9, idleT: 0, rec: false,
   flags: {}, t: 0, z96: null, lastSpawn: null, routeB: null, syncGround: false, syncT: 0, groundGuess: 40,
-  landing: false, onRoof: false, camR: null, camPitch: null, camHit: null,
+  landing: false, onRoof: false, camR: null, camPitch: null, camHit: null, google3D: null, groundHigh: false, syncLand: false,
 };
 function freshStats() { return { t: 0, flyT: 0, flyDist: 0, dist: 0, crashes: 0, fines: 0, maxSpd: 0, takeoffs: 0, airUsed: 0, best096: null }; }
 S.stats = freshStats();
@@ -556,6 +556,9 @@ const M = {
   ],
   ceilOpen: (m) => `Etrafta yüksek bina yok, tavan ${m} metre. Bina yoksa izin de yok.`,
   ceilHint: 'Boşlukla kalk. Uçuş tavanı çevredeki en yüksek binanın çatısı: şehrin içinde, binaların arasında uçuyorsun.',
+  osmOn: 'Google burada bina çizmemiş, sadece uydu fotoğrafı var. Binaları OpenStreetMap\'ten diktik: planlar gerçek, yükseklikler kat sayısından.',
+  osmFail: 'OpenStreetMap binaları gelmedi, Google\'ın da burada 3D binası yok. Şimdilik dümdüz bir şehirdesin.',
+  underground: 'Harita ayağının altından kaydı. Görünmez bir zemine bastın, yoluna devam.',
   noMap: '3D harita hazır değil, uçuş için biraz bekle.',
   flyAbort: '3D harita bu noktada yüklenmedi. Uçuş iptal, sokağa döndük.',
 };
@@ -602,7 +605,13 @@ function castRay(lon, lat, h, dE, dN, dU) {
 }
 function groundBelow(c) {
   const start = 2.2;
-  const d = castRay(c.lon, c.lat, c.h + start, 0, 0, -1);
+  S.groundHigh = false;
+  let d = castRay(c.lon, c.lat, c.h + start, 0, 0, -1);
+  if (d === undefined && !rayBroken) {
+    // nothing right under the car: a tile swapping detail, or the car slipped under the map. Look from higher up.
+    const hi = 60, d2 = castRay(c.lon, c.lat, c.h + hi, 0, 0, -1);
+    if (d2 !== undefined) { S.groundHigh = true; return c.h + hi - d2; }
+  }
   if (d === undefined) {
     if (rayBroken && scene.sampleHeightSupported) {
       _carto.longitude = c.lon; _carto.latitude = c.lat; _carto.height = 0;
@@ -694,7 +703,7 @@ function setModeChip() {
   const sv = S.mode === 'sv';
   chip.classList.toggle('g', sv || S.mapMode === 'google');
   chip.classList.toggle('f', !sv && S.mapMode === 'free');
-  $('#modeTxt').textContent = sv ? 'Street View' : (S.mapMode === 'google' ? 'Google 3D' : 'Ücretsiz mod · OSM');
+  $('#modeTxt').textContent = sv ? 'Street View' : (S.mapMode === 'google' ? (S.google3D === false && bSets.length ? 'Google foto + OSM bina' : 'Google 3D') : 'Ücretsiz mod · OSM');
 }
 let tileset = null;
 async function initMap() {
@@ -742,35 +751,145 @@ function addBuildings(instances) {
   return p;
 }
 function waitReady(p, ms) { return new Promise((res) => { const t0 = performance.now(); const tick = () => { if (!p || p.ready || performance.now() - t0 > ms) return res(); setTimeout(tick, 120); }; tick(); }); }
-async function loadOsmBuildings(lonDeg, latDeg, radius = 650) {
-  if (bLoading) return; bLoading = true; bCenter = [lonDeg, latDeg];
-  const q = `[out:json][timeout:25];way["building"](around:${radius},${latDeg.toFixed(6)},${lonDeg.toFixed(6)});out geom 3500;`;
-  let json = null;
-  for (const ep of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
-    try {
-      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 14000);
-      const r = await fetch(ep, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ctl.signal });
-      clearTimeout(to); if (r.ok) { json = await r.json(); break; }
-    } catch (e) {}
-  }
-  let p = null;
-  if (json && json.elements) {
-    const inst = [];
-    for (const el of json.elements) {
-      const g = el.geometry; if (!g || g.length < 4) continue;
-      const tags = el.tags || {};
-      let h = parseFloat(tags.height);
-      if (!isFinite(h)) { const lv = parseFloat(tags['building:levels']); h = isFinite(lv) ? lv * 3.2 + 1 : 9; }
-      h = clamp(h, 3, 450);
-      const pts = []; for (let i = 0; i < g.length - 1; i++) pts.push(g[i].lon, g[i].lat);
-      if (pts.length < 6) continue;
-      inst.push(new C.GeometryInstance({ geometry: new C.PolygonGeometry({ polygonHierarchy: new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(pts)), height: 0, extrudedHeight: h, vertexFormat: VF }), attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(shades[el.id % shades.length])) } }));
-    }
-    p = addBuildings(inst);
-  }
-  if (!p) { toast('OSM binaları gelmedi. Hayali bir mahalle kurdum; duvarları en az gerçekleri kadar sert.', 'warn', 'osmfail', 60); p = addBuildings(proceduralCity(lonDeg, latDeg)); }
-  bLoading = false;
+/* ---------- OSM buildings: real footprints, extruded by their floor count ----------
+   Free mode: the only buildings there are. Google mode: in some countries (Turkey included) Google's "3D" city is a
+   photo draped flat on the terrain, with no buildings at all. Where that is the case we stand OSM blocks on the photo. */
+const LEVELS = { apartments: 6, residential: 5, dormitory: 5, hotel: 6, office: 6, commercial: 4, retail: 2, supermarket: 1, house: 2, detached: 2, semidetached_house: 2, terrace: 2, bungalow: 1, garage: 1, garages: 1, carport: 1, shed: 1, hut: 1, roof: 1, kiosk: 1, service: 1, industrial: 2, warehouse: 2, school: 3, university: 4, college: 4, kindergarten: 2, hospital: 5, public: 3, civic: 3, government: 4, train_station: 2, mosque: 2, church: 3, construction: 3, ruins: 1, yes: 4 };
+const shadesG = ['#ece6da', '#e2d9c8', '#f2eee6', '#d8cfbf', '#e8dcc8', '#dcd6cc'];
+function osmHeight(tags) {
+  let h = parseFloat(tags.height);
+  if (!isFinite(h)) { const lv = parseFloat(tags['building:levels']); h = (isFinite(lv) ? lv : (LEVELS[tags.building] ?? 4)) * 3.2 + 1; }
+  return clamp(h, 3, 450);
+}
+const OVERPASS = ['https://overpass.openstreetmap.fr/api/interpreter', 'https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const osmCache = new Map();
+let osmPrefetch = null;
+function fetchOsm(lonDeg, latDeg, radius = 650) {
+  const key = lonDeg.toFixed(4) + ',' + latDeg.toFixed(4) + ',' + radius;
+  if (osmCache.has(key)) return osmCache.get(key);
+  const p = (async () => {
+    const q = `[out:json][timeout:25];way["building"](around:${radius},${latDeg.toFixed(6)},${lonDeg.toFixed(6)});out geom 4000;`;
+    // several public mirrors, staggered; the first good answer wins (the main one often hangs for 20 s)
+    const ctls = OVERPASS.map(() => new AbortController());
+    let done = false;
+    const one = async (ep, i) => {
+      if (i) await new Promise((r) => setTimeout(r, i * 1500));
+      if (done) throw new Error('skip');
+      const r = await fetch(ep + '?data=' + encodeURIComponent(q), { signal: ctls[i].signal });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const j = await r.json();
+      if (!j || !j.elements) throw new Error('bad');
+      return j;
+    };
+    const to = setTimeout(() => ctls.forEach((c) => c.abort()), 22000);
+    try { const j = await Promise.any(OVERPASS.map(one)); done = true; ctls.forEach((c) => c.abort()); return osmShapes(j.elements); }
+    catch (e) { return null; }
+    finally { clearTimeout(to); }
+  })();
+  osmCache.set(key, p);
+  p.then((v) => { if (!v) osmCache.delete(key); });
   return p;
+}
+// start downloading the buildings of the chosen spot while the player is still reading the menu
+function prefetchOsm(lonDeg, latDeg) { if (qs.get('demo')) return; osmPrefetch = { lon: lonDeg, lat: latDeg, p: fetchOsm(lonDeg, latDeg) }; }
+function osmFor(lonDeg, latDeg) {
+  const pf = osmPrefetch;
+  if (pf && Math.abs(pf.lon - lonDeg) < 0.0015 && Math.abs(pf.lat - latDeg) < 0.0012) return pf.p;   // ~130 m
+  return fetchOsm(lonDeg, latDeg);
+}
+function osmShapes(elements) {
+  const out = [];
+  for (const el of elements) {
+    const g = el.geometry; if (!g || g.length < 4) continue;
+    const pts = []; let sx = 0, sy = 0, ext = 0;
+    for (let i = 0; i < g.length - 1; i++) { pts.push(g[i].lon, g[i].lat); sx += g[i].lon; sy += g[i].lat; }
+    const n = pts.length / 2; if (n < 3) continue;
+    const lon = sx / n, lat = sy / n;
+    for (let i = 0; i < n; i++) ext = Math.max(ext, distM(lon * DEG, lat * DEG, pts[i * 2] * DEG, pts[i * 2 + 1] * DEG));
+    out.push({ id: el.id, pts, lon, lat, ext, h: osmHeight(el.tags || {}) });
+  }
+  return out;
+}
+function insideShape(lonDeg, latDeg, s) {
+  const p = s.pts, n = p.length / 2; let inside = false;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = p[i * 2], yi = p[i * 2 + 1], xj = p[j * 2], yj = p[j * 2 + 1];
+    if ((yi > latDeg) !== (yj > latDeg) && lonDeg < (xj - xi) * (latDeg - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function insideAny(lonDeg, latDeg, shapes) {
+  for (const s of shapes) if (Math.abs(s.lon - lonDeg) < 0.002 && Math.abs(s.lat - latDeg) < 0.002 && insideShape(lonDeg, latDeg, s)) return true;
+  return false;
+}
+function buildingInstance(s, base, bottom, palette) {
+  return new C.GeometryInstance({
+    geometry: new C.PolygonGeometry({ polygonHierarchy: new C.PolygonHierarchy(C.Cartesian3.fromDegreesArray(s.pts)), height: bottom, extrudedHeight: base + s.h, vertexFormat: VF }),
+    attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(palette[Math.abs(s.id) % palette.length])) },
+  });
+}
+// does Google have real buildings here? compare the surface on a building with the surface just outside it
+async function googleHasBuildings(shapes, lonDeg, latDeg) {
+  const near = shapes.filter((s) => s.h >= 7 && s.ext > 5 && s.ext < 60)
+    .map((s) => ({ s, d: distM(lonDeg * DEG, latDeg * DEG, s.lon * DEG, s.lat * DEG) }))
+    .sort((a, b) => a.d - b.d).slice(0, 24).map((x) => x.s);
+  if (near.length < 6) return null;
+  const pts = [];
+  for (const s of near) { pts.push(C.Cartographic.fromDegrees(s.lon, s.lat, 0)); const [lo, la] = moveLL(s.lon * DEG, s.lat * DEG, 0, -(s.ext + 9)); pts.push(C.Cartographic.fromRadians(lo, la, 0)); }
+  let res;
+  try { res = await withTimeout(scene.sampleHeightMostDetailed(pts, EXCLUDE), 12000); } catch (e) { return null; }
+  if (res === 'timeout') return null;
+  const rel = [];
+  for (let i = 0; i < res.length; i += 2) { const a = res[i], b = res[i + 1]; if (a && b && isFinite(a.height) && isFinite(b.height)) rel.push(a.height - b.height); }
+  if (rel.length < 5) return null;
+  rel.sort((a, b) => a - b);
+  return rel[Math.floor(rel.length / 2)] > 4;
+}
+// ground height on a coarse grid, so blocks on a slope stand on the slope
+async function terrainGrid(lonDeg, latDeg, radius, fallback) {
+  const step = 100, n = Math.ceil(radius / step), pts = [], idx = [];
+  for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) { const [lo, la] = moveLL(lonDeg * DEG, latDeg * DEG, i * step, j * step); pts.push(C.Cartographic.fromRadians(lo, la, 0)); idx.push([i, j]); }
+  const grid = new Map();
+  try {
+    const res = await withTimeout(scene.sampleHeightMostDetailed(pts, bSets.slice()), 15000);
+    if (res !== 'timeout') res.forEach((c, k) => { if (c && isFinite(c.height)) grid.set(idx[k].join(','), c.height); });
+  } catch (e) {}
+  const k0 = Math.cos(latDeg * DEG);
+  return (lo, la) => {
+    const e = (lo - lonDeg) * DEG * R_EARTH * k0, nn = (la - latDeg) * DEG * R_EARTH;
+    const i = Math.round(e / step), j = Math.round(nn / step);
+    for (const [di, dj] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) { const v = grid.get((i + di) + ',' + (j + dj)); if (v !== undefined) return v; }
+    return fallback;
+  };
+}
+let osmShapesNow = [], osmToastShown = false, osmLoadId = 0;
+// force: a spawn always loads (a background reload still running is dropped); a reload while driving waits its turn
+async function loadOsmBuildings(lonDeg, latDeg, radius = 650, groundH = 0, force = false) {
+  if (bLoading && !force) return null;
+  const my = ++osmLoadId; bLoading = true; bCenter = [lonDeg, latDeg];
+  const stale = () => my !== osmLoadId;
+  try {
+    const shapes = await osmFor(lonDeg, latDeg);
+    if (stale()) return null;
+    if (S.mapMode === 'free') {
+      if (!shapes || !shapes.length) { toast('OSM binaları gelmedi. Hayali bir mahalle kurdum; duvarları en az gerçekleri kadar sert.', 'warn', 'osmfail', 60); return addBuildings(proceduralCity(lonDeg, latDeg)); }
+      osmShapesNow = shapes;
+      return addBuildings(shapes.map((s) => buildingInstance(s, 0, 0, shades)));
+    }
+    // Google mode
+    if (!shapes || !shapes.length) { if (S.google3D !== true) toast(M.osmFail, 'warn', 'osmfail', 120); return null; }
+    // Turkey is known to be photo-only (checked in İzmir, İstanbul); elsewhere measure it
+    const inTR = latDeg > 35.8 && latDeg < 42.2 && lonDeg > 25.6 && lonDeg < 44.9;
+    if (S.google3D == null) S.google3D = inTR ? false : (await googleHasBuildings(shapes, lonDeg, latDeg)) === true;
+    if (stale() || S.google3D) return null;            // real 3D city: leave Google's buildings alone
+    const baseAt = await terrainGrid(lonDeg, latDeg, radius, groundH);
+    if (stale()) return null;
+    osmShapesNow = shapes;
+    const p = addBuildings(shapes.map((s) => { const b = baseAt(s.lon, s.lat); return buildingInstance(s, b, b - 14, shadesG); }));
+    setModeChip();
+    if (!osmToastShown) { osmToastShown = true; setTimeout(() => toast(M.osmOn), 7000); }
+    return p;
+  } finally { if (!stale()) bLoading = false; }
 }
 function proceduralCity(lonDeg, latDeg) {
   const inst = [];
@@ -1106,29 +1225,56 @@ async function spawnAt(lonDeg, latDeg, hdgDeg, label) {
   }
   await cesiumSpawn(lonDeg, latDeg, hdgDeg, label);
 }
+// a fixed afternoon sun for the blocks (Google's photo is unlit anyway), so a night-time visit does not turn them black
+function setLocalLight(lon, lat) {
+  const enu = enuAt(lon, lat, 0), d = new C.Cartesian3();
+  C.Matrix4.multiplyByPointAsVector(enu, new C.Cartesian3(0.35, 0.55, -0.76), d);
+  scene.light = new C.DirectionalLight({ direction: C.Cartesian3.normalize(d, d), intensity: 2.2 });
+}
 async function cesiumSpawn(lonDeg, latDeg, hdgDeg, label) {
   S.phase = 'loading';
   showLoading('Zemin aranıyor…');
   setMode('cz'); setCesiumRunning(true);
   const lon = lonDeg * DEG, lat = latDeg * DEG;
+  setLocalLight(lon, lat);
   camera.lookAtTransform(C.Matrix4.IDENTITY);
   camera.setView({ destination: C.Cartesian3.fromDegrees(lonDeg, latDeg - 0.0012, 320), orientation: { heading: 0, pitch: -0.75, roll: 0 } });
+  const near = bCenter && bSets.length && distM(lon, lat, bCenter[0] * DEG, bCenter[1] * DEG) < 300;
+  let osmJob = null;
   if (S.mapMode === 'free') {
-    const near = bCenter && bSets.length && distM(lon, lat, bCenter[0] * DEG, bCenter[1] * DEG) < 300;
-    if (!near) { if (qs.get('demo')) { bCenter = [lonDeg, latDeg]; addBuildings(proceduralCity(lonDeg, latDeg)); } else await loadOsmBuildings(lonDeg, latDeg); }
+    if (!near) { if (qs.get('demo')) { bCenter = [lonDeg, latDeg]; addBuildings(proceduralCity(lonDeg, latDeg)); } else await loadOsmBuildings(lonDeg, latDeg, 650, 0, true); }
     await waitReady(bSets[bSets.length - 1], 9000);
+  } else if (S.mapMode === 'google' && !near) {
+    // new area: drop old blocks, find out whether Google has buildings here, stand OSM blocks if not (runs while we look for the street)
+    while (bSets.length) scene.primitives.remove(bSets.shift());
+    S.google3D = null; osmShapesNow = []; bCenter = null; setModeChip();
+    osmJob = loadOsmBuildings(lonDeg, latDeg, 650, S.spotH || S.groundGuess, true);
   }
   const cand = [[0, 0]];
   for (const r of [12, 26, 42]) for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; cand.push([Math.cos(a) * r, Math.sin(a) * r]); }
   const cartos = cand.map(([e, n]) => { const [lo, la] = moveLL(lon, lat, e, n); return C.Cartographic.fromRadians(lo, la, 0); });
+  // street height: blocks we stood ourselves are excluded (the live list, so blocks added meanwhile are too)
+  const groundP = withTimeout(scene.sampleHeightMostDetailed(cartos, bSets), 14000).catch(() => 'timeout');
+  if (osmJob) { showLoading('Binalar dikiliyor…'); const p = await withTimeout(osmJob, 35000); if (p && p !== 'timeout') { showLoading('Binalar dikiliyor…'); await waitReady(p, 9000); } }
+  const res = await groundP;
   let best = null;
-  try {
-    const res = await withTimeout(scene.sampleHeightMostDetailed(cartos, EXCLUDE), 14000);
-    if (res !== 'timeout') res.forEach((c) => { if (c && isFinite(c.height) && (best === null || c.height < best.height - 0.4)) best = { lon: c.longitude, lat: c.latitude, height: c.height }; });
-  } catch (e) {}
+  if (res !== 'timeout' && Array.isArray(res)) {
+    // the first point from the centre outwards that is at street level (not a roof) and not inside a building block;
+    // "lowest" alone picked the sea next to the Kordon
+    const ok = res.map((x) => x && isFinite(x.height));
+    const min = Math.min(...res.filter((x, i) => ok[i]).map((x) => x.height));
+    for (let i = 0; i < res.length && !best; i++) {
+      const x = res[i];
+      if (!ok[i] || x.height > min + 3) continue;
+      if (osmShapesNow.length && insideAny(x.longitude / DEG, x.latitude / DEG, osmShapesNow)) continue;
+      best = { lon: x.longitude, lat: x.latitude, height: x.height };
+    }
+    if (!best) res.forEach((x, i) => { if (ok[i] && (!best || x.height < best.height)) best = { lon: x.longitude, lat: x.latitude, height: x.height }; });
+  }
   const c = S.car;
+  S.syncLand = false;
   if (best) { c.lon = best.lon; c.lat = best.lat; c.h = best.height; c.onGround = true; S.syncGround = false; }
-  else { c.lon = lon; c.lat = lat; c.h = S.spotH || S.groundGuess; c.onGround = false; S.syncGround = true; S.syncT = 0; }
+  else { c.lon = lon; c.lat = lat; c.h = S.spotH || S.groundGuess; c.onGround = false; S.syncGround = true; S.syncLand = true; S.syncT = 0; }
   c.heading = (hdgDeg || 0) * DEG; c.vE = c.vN = c.vz = 0; c.steer = 0;
   S.camHeading = c.heading; S.streetRef = c.h; S.onRoof = false; S.camR = null; S.camHit = null;
   ceilInit(c.lat);
@@ -1297,12 +1443,19 @@ function step3D(dt) {
     S.syncT += dt;
     let top = topSurface(c.lon, c.lat);
     if (top === undefined && S.syncHeight != null) top = S.syncHeight;
-    if (top !== undefined) {
+    if (top !== undefined && S.syncLand) {          // spawn without a known street height: just put the car on the map
+      S.syncHeight = null; S.syncLand = false;
+      c.h = top; c.vz = 0; c.onGround = true; S.syncGround = false; S.groundGuess = top; S.streetRef = top;
+    } else if (top !== undefined) {
       S.syncHeight = null;
       c.h = top + 0.6; c.vz = 7; S.syncGround = false; S.groundGuess = top; S.streetRef = top;
       if (!S.flags.took) { S.flags.took = true; toast(M.takeoff1, 'warn'); } else toast(pick(M.takeoff), '', 'takeoff', 8);
     } else {
-      if (S.syncT > 8) { S.syncGround = false; toast(M.flyAbort, 'warn'); if (S.lastSV && S.svOk) enterSV(S.lastSV, S.hdg); }
+      if (S.syncT > 8) {
+        S.syncGround = false;
+        if (S.syncLand) { S.syncLand = false; c.onGround = true; c.vz = 0; }   // no map under us yet: stay put on the guessed street level
+        else { toast(M.flyAbort, 'warn'); if (S.lastSV && S.svOk) enterSV(S.lastSV, S.hdg); }
+      }
       S.fly.up = 0.6; return;
     }
   }
@@ -1364,11 +1517,12 @@ function step3D(dt) {
     if (d !== undefined && d < hs * dt + 2.3) { crash(hs); const back = Math.min(hs * 0.25, 3); c.vE = -dE * back; c.vN = -dN * back; }
     else { [c.lon, c.lat] = moveLL(c.lon, c.lat, c.vE * dt, c.vN * dt); moved = true; S.stats.dist += hs * dt; if (c.onGround) S.battery = Math.max(0, S.battery - hs * dt / 1000 * PHYS.kWhPerKm / SPEC.batteryKWh); }
   }
-  const g = groundBelow(c);
+  let g = groundBelow(c);
   S.ground = g;
   if (c.onGround) {
     if (g !== undefined) {
-      if (g > c.h + 2.0 && moved) { c.lon = prevLon; c.lat = prevLat; crash(hs); c.vE *= -0.2; c.vN *= -0.2; }
+      if (S.groundHigh && g > c.h + 0.05) c.h = g;     // the surface is above us: we slipped under the map, climb back on top
+      else if (g > c.h + 2.0 && moved) { c.lon = prevLon; c.lat = prevLat; crash(hs); c.vE *= -0.2; c.vN *= -0.2; }
       else if (g > c.h + 0.05 && !moved) c.h = g;
       else if (g < c.h - 0.8) { c.onGround = false; c.vz = 0; }
       else c.h += (g - c.h) * Math.min(1, dt * 14);
@@ -1376,13 +1530,17 @@ function step3D(dt) {
     }
   } else {
     const nh = c.h + c.vz * dt;
-    if (g !== undefined && nh <= g) {
+    // no surface found at all (map not loaded here): an invisible floor just under the last street level, never a bottomless fall
+    let floor = false;
+    if (g === undefined && S.streetRef != null && nh < S.streetRef - 3) { g = S.streetRef - 3; floor = true; if (!S.flags.under) { S.flags.under = true; toast(M.underground, 'warn'); } }
+    if (g !== undefined && (nh <= g || S.groundHigh)) {
       const impact = -c.vz;
       c.h = g; c.vz = 0; c.onGround = true;
       const v = c.vE * fE + c.vN * fN; c.vE = fE * v; c.vN = fN * v;
       if (impact > 9) { S.shake = 0.8; S.stats.crashes++; toast(M.hardLand, 'burnt', 'hard', 4); }
       else if (!S.flags.soft && impact < 4.5) { S.flags.soft = true; toast(M.softLand); }
-      if (S.streetRef != null && g - S.streetRef > 6) { S.onRoof = true; toast(M.roof, '', 'roof', 20); addFine(20, 'roof', 20); }
+      if (floor) S.onRoof = false;
+      else if (S.streetRef != null && g - S.streetRef > 6) { S.onRoof = true; toast(M.roof, '', 'roof', 20); addFine(20, 'roof', 20); }
       else { S.onRoof = false; S.streetRef = g; }
       S.groundGuess = g;
       if (DRIVE === 'sv' && S.svOk) landToStreet();
@@ -1485,7 +1643,7 @@ function checks() {
   if (S.idleT > 25 && !f.idle) { f.idle = true; toast(cityOf(p) === 'İzmir' ? M.idleIzmir : M.idle); }
   if (S.idleT < 1) f.idle = false;
   if (S.mission && !S.mission.done && distM(p.lon, p.lat, S.mission.lon, S.mission.lat) < 40) finishMission(true);
-  if (S.mapMode === 'free' && S.mode !== 'sv' && !qs.get('demo') && bCenter && !bLoading && distM(p.lon, p.lat, bCenter[0] * DEG, bCenter[1] * DEG) > 450) loadOsmBuildings(p.lon / DEG, p.lat / DEG);
+  if ((S.mapMode === 'free' || S.google3D === false) && S.mode !== 'sv' && !qs.get('demo') && bCenter && !bLoading && distM(p.lon, p.lat, bCenter[0] * DEG, bCenter[1] * DEG) > 450) loadOsmBuildings(p.lon / DEG, p.lat / DEG, 650, S.streetRef != null ? S.streetRef : S.groundGuess);
 }
 function cityOf(p) {
   let best = null, bd = 1e12;
@@ -1624,7 +1782,7 @@ function buildMenu() {
   }
   const want = SPOTS.find((s) => s.id === qs.get('spot')) || SPOTS.find((s) => s.id === CONFIG.DEFAULT_SPOT);
   sel.value = want.id; S.spot = want;
-  sel.onchange = () => { S.spot = SPOTS.find((s) => s.id === sel.value); S.spotH = 0; probeSpotHeight(); };
+  sel.onchange = () => { S.spot = SPOTS.find((s) => s.id === sel.value); S.spotH = 0; probeSpotHeight(); prefetchOsm(S.spot.lon, S.spot.lat); };
   const rs = $('#routeSel');
   for (const r of ROUTES) { const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; rs.appendChild(o); }
   const oc = document.createElement('option'); oc.value = 'custom'; oc.textContent = 'Aracın olduğu yer → haritada seçtiğin nokta'; rs.appendChild(oc);
@@ -1769,6 +1927,7 @@ function renderScience() {
    ===================================================================== */
 buildMenu();
 camera.setView({ destination: C.Cartesian3.fromDegrees(S.spot.lon, S.spot.lat - 0.006, 700), orientation: { heading: 0, pitch: -0.5, roll: 0 } });
+prefetchOsm(S.spot.lon, S.spot.lat);
 initMap().then(() => { probeSpotHeight(); if (qs.get('autostart')) $('#bStart').click(); });
 if (DRIVE === 'sv') { initSV(); $('#hintSteer').textContent = 'kavşakta dön'; }
 else $('#svStatus').hidden = true;
