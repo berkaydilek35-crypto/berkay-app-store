@@ -448,7 +448,7 @@ const SPOTS = [
   { id: 'kordon',    city: 'İzmir',    name: 'Kordon sahil yolu',            lat: 38.43671, lon: 27.14004, hdg: 36 },
   { id: 'alsancak',  city: 'İzmir',    name: 'Alsancak · Cumhuriyet Blv.',   lat: 38.43807, lon: 27.14215, hdg: 19 },
   { id: 'kibris',    city: 'İzmir',    name: 'Alsancak · Kıbrıs Şehitleri',  lat: 38.4373,  lon: 27.1436,  hdg: 16 },
-  { id: 'konak',     city: 'İzmir',    name: 'Konak Saat Kulesi',            lat: 38.41908, lon: 27.12877, hdg: 106 },
+  { id: 'kemeralti', city: 'İzmir',    name: 'Kemeraltı · 852. Sk.',         lat: 38.41842, lon: 27.13212, hdg: 43 },
   { id: 'kulturpark',city: 'İzmir',    name: 'Kültürpark · Refik Saydam Blv.', lat: 38.42737, lon: 27.14139, hdg: 342 },
   { id: 'karsiyaka', city: 'İzmir',    name: 'Karşıyaka İskelesi',           lat: 38.45494, lon: 27.11959, hdg: 44 },
   { id: 'bornova',   city: 'İzmir',    name: 'Bornova Küçükpark',            lat: 38.4601109, lon: 27.2133902, hdg: 310 },
@@ -458,10 +458,10 @@ const SPOTS = [
   { id: 'times',     city: 'New York', name: 'Times Square',                 lat: 40.75800, lon: -73.98557, hdg: 30 },
 ];
 const ROUTES = [
-  { id: 'korfez',  name: 'Gündoğdu → Karşıyaka (Körfez üstünden)', a: 'kordon', b: 'karsiyaka', note: 'Rota denizin üstünden geçiyor. Her zıplamanın sonu körfez.' },
-  { id: 'bornova', name: 'Konak → Bornova Küçükpark',             a: 'konak',  b: 'bornova' },
-  { id: 'kordonb', name: 'Konak → Gündoğdu (Kordon boyu)',        a: 'konak',  b: 'kordon' },
-  { id: 'kultur',  name: 'Gündoğdu → Kültürpark',                 a: 'kordon', b: 'kulturpark', note: 'Fuar zamanı otopark bulmaktan kolay olabilir.' },
+  { id: 'korfez',  name: 'Kordon → Karşıyaka (Körfez üstünden)', a: 'kordon', b: 'karsiyaka', note: 'Rota denizin üstünden geçiyor. Her zıplamanın sonu körfez.' },
+  { id: 'bornova', name: 'Kemeraltı → Bornova Küçükpark',         a: 'kemeralti', b: 'bornova' },
+  { id: 'kordonb', name: 'Kemeraltı → Kordon',                    a: 'kemeralti', b: 'kordon' },
+  { id: 'kultur',  name: 'Alsancak → Kültürpark',                 a: 'alsancak', b: 'kulturpark', note: 'Fuar zamanı otopark bulmaktan kolay olabilir.' },
   { id: 'galata',  name: 'Taksim → Galata Kulesi',                a: 'taksim', b: 'galata' },
 ];
 const AIRPORTS = [
