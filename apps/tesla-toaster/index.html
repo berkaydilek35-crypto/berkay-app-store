@@ -627,7 +627,7 @@ function bearingTo(lon1, lat1, lon2, lat2) {
 /* ---------- flight ceiling: the tallest roof around the car ----------
    The 3D map is probed straight down on a world-fixed 10 m grid, nearest cells first, a ray or two per frame.
    Ceiling = tallest surface within CEIL.radius + a little clearance; with nothing tall around, street + CEIL.floor. */
-const CEIL = { cell: 10, radius: 160, clear: 4, floor: 15, perFrame: isTouch ? 1 : 2, cells: new Map(), offs: null, cur: 0, key: null, k: 1, top: null, value: null, base: null };
+const CEIL = { cell: 10, radius: 160, clear: 4, floor: 15, perFrame: 1, cells: new Map(), offs: null, cur: 0, key: null, k: 1, top: null, value: null, base: null };
 function ceilInit(lat) {
   CEIL.cells.clear(); CEIL.k = Math.cos(lat); CEIL.cur = 0; CEIL.key = null; CEIL.top = null; CEIL.value = null;
   if (!CEIL.offs) {
@@ -1405,7 +1405,7 @@ function sync3DCamera(dt) {
   const wide = S.camMode === 1, pitch = wide ? 0.42 : CHASE.pitch, want = wide ? 40 : CHASE.r;
   // keep the camera out of walls: look back along the boom; if something is in the way, swing the camera up
   // over the car, and only shorten the boom when even that is blocked
-  if (camRayN++ % (isTouch ? 2 : 1) === 0) {
+  if (camRayN++ % (isTouch ? 4 : 3) === 0) {                       // every few frames: each ray is a small GPU read-back
     let best = null;
     for (const p of [pitch, pitch + 0.45, pitch + 0.9, 1.35]) {
       const cp = Math.cos(p);
