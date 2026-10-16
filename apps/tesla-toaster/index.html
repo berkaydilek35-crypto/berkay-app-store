@@ -41,11 +41,12 @@
 html,body{height:100%;margin:0;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 button{font-family:inherit;color:inherit}
 button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--toast);outline-offset:2px}
-#cesium,#sv{position:fixed;inset:0}
-#sv{z-index:1;background:#20262c}
+#cesium,#svWrap{position:fixed;inset:0}
+#svWrap{z-index:1;background:#20262c}
+#sv{width:100%;height:100%}   /* Google writes position:relative on this div, so the fixed box lives on the wrapper */
 #cesium{z-index:2}
 body.mode-sv #cesium{visibility:hidden}
-body:not(.mode-sv) #sv{visibility:hidden}
+body:not(.mode-sv) #svWrap{visibility:hidden}
 #carView{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
 .cesium-widget-credits{font-size:10px!important;opacity:.9;left:max(8px,env(safe-area-inset-left,0px))!important;bottom:calc(4px + env(safe-area-inset-bottom,0px))!important}
 
@@ -215,7 +216,7 @@ details p{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
 </style>
 </head>
 <body class="mode-3d">
-<div id="sv"></div>
+<div id="svWrap"><div id="sv"></div></div>
 <div id="cesium"></div>
 <canvas id="carView" hidden></canvas>
 
