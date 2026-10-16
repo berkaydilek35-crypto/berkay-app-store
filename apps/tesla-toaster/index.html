@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Tesla Toaster</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Uçan arabayla gerçek sokaklarda: Street View'da sür, iticileri ateşle, 3D şehrin üstünden uç. Soru tek: gidebilir misin?">
+<meta name="description" content="Uçan arabayla gerçek şehrin 3D haritasında sür, iticileri ateşle, binaların arasında uç. Soru tek: gidebilir misin?">
 <meta name="theme-color" content="#0d1013">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -257,7 +257,7 @@ details p{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
   </div>
   <div id="hint" class="panel">
     <span><kbd>W</kbd><kbd>S</kbd> gaz / fren</span>
-    <span><kbd>A</kbd><kbd>D</kbd> kavşakta dön</span>
+    <span><kbd>A</kbd><kbd>D</kbd> <span id="hintSteer">direksiyon</span></span>
     <span><kbd>Boşluk</kbd> uç</span>
     <span><kbd>Shift</kbd> itici</span>
     <span><kbd>C</kbd> kamera</span>
@@ -296,7 +296,7 @@ details p{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
             <div><b>TESLA TOASTER</b><small>Uçan tost makinesi</small></div>
           </div>
           <h1>Uçan arabayla şehirde <span>gidebilir misin?</span></h1>
-          <p>Gerçek sokaklarda Street View'la sür, iticileri ateşle, şehrin 3D haritasının üstünden uç. Değerler lansmanda açıklanan uçan versiyondan.</p>
+          <p>Gerçek şehrin 3D haritasında sür, iticileri ateşle, binaların arasında uç. Tavan: çevredeki en yüksek bina. Değerler lansmanda açıklanan uçan versiyondan.</p>
           <div class="news">15 Ekim 2026: Yeni Roadster, Teksas'taki gösteride rampadan atlayıp arabaların üstünden uçtu. Uçuş 600 litre basınçlı havayla, birkaç saniye sürüyor. Biz de aynı değerlerle bir tost makinesi yaptık.</div>
           <div class="plate">
             <div class="plate-head"><b>Uçan versiyonun değerleri</b><span class="legal">Trafiğe çıkma onayı yok</span></div>
@@ -321,7 +321,7 @@ details p{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
           </div>
           <details id="keyBox">
             <summary>Google anahtarı (geliştirici)</summary>
-            <p>Street View için Maps JavaScript API, uçuş için Map Tiles API gerekir. Anahtar yoksa ya da kota dolduysa uygulama ücretsiz modda çalışır.</p>
+            <p>3D şehir için Map Tiles API gerekir. Anahtar yoksa ya da kota dolduysa uygulama ücretsiz modda çalışır.</p>
             <div class="row"><input type="text" id="keyInput" placeholder="AIza…" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button class="btn" id="keySave">Kaydet</button></div>
             <div class="row" style="margin-top:8px"><button class="btn ghost" id="keyClear">Anahtarı sil</button><button class="btn ghost" id="forceFree">Ücretsiz modu dene</button></div>
           </details>
@@ -391,6 +391,10 @@ const CONFIG = {
   GOOGLE_KEY: '__GOOGLE_MAPS_KEY__',   // yayın sırasında GitHub Actions secret'ından gelir
   DEFAULT_SPOT: 'kordon',
 };
+// Driving happens in the same 3D city you fly in, so nothing reloads on takeoff.
+// The older Street View ground mode is still there behind ?surus=sv.
+const qs0 = new URLSearchParams(location.search);
+const DRIVE = qs0.get('surus') === 'sv' ? 'sv' : '3d';
 
 const C = window.Cesium;
 const $ = (s) => document.querySelector(s);
@@ -489,7 +493,7 @@ const S = {
   keys: {}, camMode: 0, camHeading: 0, orbit: 0, shake: 0, pop: 0, fly: { up: 0, rear: 0 },
   stats: null, mission: null, pickFor: null, lastCrashT: -9, idleT: 0, rec: false,
   flags: {}, t: 0, z96: null, lastSpawn: null, routeB: null, syncGround: false, syncT: 0, groundGuess: 40,
-  landing: false,
+  landing: false, onRoof: false, camR: null, camPitch: null, camHit: null,
 };
 function freshStats() { return { t: 0, flyT: 0, flyDist: 0, dist: 0, crashes: 0, fines: 0, maxSpd: 0, takeoffs: 0, airUsed: 0, best096: null }; }
 S.stats = freshStats();
@@ -545,6 +549,13 @@ const M = {
   idle: 'Duruyorsun. Gerçekçilik puanı: tam.',
   reset: 'Sıfırlandın. Sigorta kayıtlarında görünmez. (Görünür.)',
   license: 'Ceza puanın 100\'ü geçti. Gerçek hayatta ehliyetine el konurdu. Burada sadece utanırsın.',
+  ceil: [
+    (m) => `Tavan ${m} metre: çevredeki en yüksek bina. Daha yukarısı kuşların ve SHGM'nin.`,
+    (m) => `${m} metreden yukarı çıkamazsın. Komşu apartman "benden yükseğe çıkamazsın" dedi, yönetim planına da yazdırmış.`,
+    (m) => `Tavan ${m} m. Uçan araba ama apartman boyu. İmar planı havaya da uygulanıyor.`,
+  ],
+  ceilOpen: (m) => `Etrafta yüksek bina yok, tavan ${m} metre. Bina yoksa izin de yok.`,
+  ceilHint: 'Boşlukla kalk. Uçuş tavanı çevredeki en yüksek binanın çatısı: şehrin içinde, binaların arasında uçuyorsun.',
   noMap: '3D harita hazır değil, uçuş için biraz bekle.',
   flyAbort: '3D harita bu noktada yüklenmedi. Uçuş iptal, sokağa döndük.',
 };
@@ -613,6 +624,61 @@ function bearingTo(lon1, lat1, lon2, lat2) {
   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
   return Math.atan2(y, x);
 }
+/* ---------- flight ceiling: the tallest roof around the car ----------
+   The 3D map is probed straight down on a world-fixed 10 m grid, nearest cells first, a ray or two per frame.
+   Ceiling = tallest surface within CEIL.radius + a little clearance; with nothing tall around, street + CEIL.floor. */
+const CEIL = { cell: 10, radius: 160, clear: 4, floor: 15, perFrame: isTouch ? 1 : 2, cells: new Map(), offs: null, cur: 0, key: null, k: 1, top: null, value: null, base: null };
+function ceilInit(lat) {
+  CEIL.cells.clear(); CEIL.k = Math.cos(lat); CEIL.cur = 0; CEIL.key = null; CEIL.top = null; CEIL.value = null;
+  if (!CEIL.offs) {
+    const r = Math.ceil(CEIL.radius / CEIL.cell), o = [];
+    // a coarse 20 m pass first (whole circle in a few seconds), then the cells in between; nearest first within each pass
+    for (let i = -r; i <= r; i++) for (let j = -r; j <= r; j++) { const d = Math.hypot(i, j) * CEIL.cell; if (d <= CEIL.radius) o.push([i, j, d + (i % 2 || j % 2 ? 1000 : 0)]); }
+    CEIL.offs = o.sort((a, b) => a[2] - b[2]);
+  }
+}
+if (window.__kt) window.__kt.CEIL = CEIL;
+function ceilCell(lon, lat) { return [Math.round(lon * R_EARTH * CEIL.k / CEIL.cell), Math.round(lat * R_EARTH / CEIL.cell)]; }
+function ceilSample() {
+  const c = S.car; if (!CEIL.offs) ceilInit(c.lat);
+  const [x0, y0] = ceilCell(c.lon, c.lat), key = x0 + ',' + y0;
+  if (key !== CEIL.key) { CEIL.key = key; CEIL.cur = 0; }           // moved to a new cell: nearest cells first again
+  let shots = 0, looked = 0;
+  while (shots < CEIL.perFrame && looked < 90) {
+    if (CEIL.cur >= CEIL.offs.length) CEIL.cur = 0;
+    const [di, dj] = CEIL.offs[CEIL.cur++]; looked++;
+    const x = x0 + di, y = y0 + dj, k = x + ',' + y, e = CEIL.cells.get(k);
+    if (e && (e.h !== undefined || S.t - e.t < Math.min(30, 2 ** e.miss))) continue;   // known, or missed recently (tile not loaded yet / empty)
+    const jx = (Math.random() - 0.5) * 0.7, jy = (Math.random() - 0.5) * 0.7;
+    const h = topSurface((x + jx) * CEIL.cell / (R_EARTH * CEIL.k), (y + jy) * CEIL.cell / R_EARTH);
+    CEIL.cells.set(k, { x, y, h, t: S.t, miss: h === undefined ? (e ? e.miss : 0) + 1 : 0 });
+    shots++;
+  }
+}
+function ceilUpdate() {
+  const c = S.car; if (!CEIL.offs) return;
+  const [x0, y0] = ceilCell(c.lon, c.lat), r2 = (CEIL.radius / CEIL.cell) ** 2, drop2 = ((CEIL.radius + 80) / CEIL.cell) ** 2;
+  let top = -Infinity;
+  for (const [k, e] of CEIL.cells) {
+    const d2 = (e.x - x0) ** 2 + (e.y - y0) ** 2;
+    if (d2 > drop2) { CEIL.cells.delete(k); continue; }
+    if (d2 <= r2 && e.h !== undefined && e.h > top) top = e.h;
+  }
+  const base = S.streetRef != null ? S.streetRef : (S.ground !== undefined ? S.ground : c.h);
+  CEIL.base = base;
+  CEIL.top = isFinite(top) ? top : null;
+  const target = Math.max(CEIL.top != null ? CEIL.top + CEIL.clear : -Infinity, base + CEIL.floor);
+  // rises at once, comes down at most 6 m/s, so a patch of not-yet-sampled cells does not make it jump
+  if (CEIL.value == null || target >= CEIL.value) CEIL.value = target;
+  else CEIL.value = Math.max(target, CEIL.value - 6 * Math.max(0.05, S.t - (CEIL.lastT == null ? S.t : CEIL.lastT)));
+  CEIL.lastT = S.t;
+}
+function ceilHit() {
+  if (CEIL.value == null || CEIL.base == null) return;
+  const m = fmt(CEIL.value - CEIL.base);
+  if (CEIL.top == null || CEIL.top + CEIL.clear <= CEIL.base + CEIL.floor) toast(M.ceilOpen(m), '', 'ceil', 12);
+  else toast(pick(M.ceil)(m), 'warn', 'ceil', 12);
+}
 const distD = (a, b) => distM(a.lng * DEG, a.lat * DEG, b.lng * DEG, b.lat * DEG);
 const bearD = (a, b) => wrap360(bearingTo(a.lng * DEG, a.lat * DEG, b.lng * DEG, b.lat * DEG) / DEG);
 
@@ -635,11 +701,17 @@ async function initMap() {
   const key = resolveKey();
   if (key) {
     try {
-      setStatus('#mapStatus', 'Uçuş için 3D harita yükleniyor…');
-      tileset = await C.createGooglePhotorealistic3DTileset({ key, onlyUsingWithGoogleGeocoder: true }, { maximumScreenSpaceError: isTouch ? 24 : 16 });
+      setStatus('#mapStatus', '3D şehir yükleniyor…');
+      const MB = 1024 * 1024;
+      tileset = await C.createGooglePhotorealistic3DTileset({ key, onlyUsingWithGoogleGeocoder: true }, {
+        maximumScreenSpaceError: isTouch ? 24 : 16,
+        dynamicScreenSpaceError: true,                      // street-level view: far tiles stay coarse, near ones load first
+        cacheBytes: (isTouch ? 384 : 1024) * MB,            // keep the neighbourhood in memory so it does not reload
+        maximumCacheOverflowBytes: (isTouch ? 128 : 512) * MB,
+      });
       scene.primitives.add(tileset);
       S.mapMode = 'google'; S.mapReady = true;
-      setStatus('#mapStatus', 'Uçuş için Google 3D hazır.', true);
+      setStatus('#mapStatus', DRIVE === 'sv' ? 'Uçuş için Google 3D hazır.' : 'Google 3D hazır: sürüş ve uçuş aynı haritada.', true);
       return;
     } catch (e) {
       const code = e && (e.statusCode || (e.response && e.response.status));
@@ -974,10 +1046,14 @@ function sizeCar() {
   const H = w >= h ? 80 : 60;            // horizontal field of view, shared with Street View and the 3D camera
   const hf = H * DEG, vf = 2 * Math.atan(Math.tan(hf / 2) * h / w);
   CAM3.fov = vf / DEG; CAM3.aspect = w / h; CAM3.updateProjectionMatrix();
-  CAM3.position.set(0, CHASE.lift + CHASE.r * Math.sin(CHASE.pitch), CHASE.r * Math.cos(CHASE.pitch));
-  CAM3.lookAt(0, CHASE.lift, 0);
+  placeCam3(CHASE.r, CHASE.pitch);
   camera.frustum.fov = w >= h ? hf : vf;
   if (pano) pano.setZoom(svZoom());
+}
+// the car layer's camera sits exactly where the map camera is, so the car keeps its size when the boom shortens
+function placeCam3(r, pitch) {
+  CAM3.position.set(0, CHASE.lift + r * Math.sin(pitch), r * Math.cos(pitch));
+  CAM3.lookAt(0, CHASE.lift, 0);
 }
 addEventListener('resize', sizeCar);
 sizeCar();
@@ -1001,6 +1077,7 @@ function renderCar(dt) {
   REARF.visible = S.fly.rear > 0.04; if (REARF.visible) REARF.scale.set(1, 1, 0.7 + Math.random() * 0.5);
   S.shake = Math.max(0, S.shake - dt * 1.6);
   const sk = S.shake * S.shake * 0.12;
+  if (S.mode === 'sv' || S.camR == null) placeCam3(CHASE.r, CHASE.pitch); else placeCam3(S.camR, S.camPitch);
   CAM3.position.x = (Math.random() - 0.5) * sk;
   R3.render(S3, CAM3);
 }
@@ -1014,8 +1091,8 @@ async function spawnAt(lonDeg, latDeg, hdgDeg, label) {
   hideAll();
   S.lastSpawn = { lonDeg, latDeg, hdgDeg, label };
   S.air = PHYS.impulse; S.flags = {}; S.z96 = null; S.idleT = 0; S.landing = false; S.syncGround = false;
-  if (!S.svOk && !S.svFailed) { showLoading('Street View hazırlanıyor…'); for (let i = 0; i < 40 && !S.svOk && !S.svFailed; i++) await new Promise((r) => setTimeout(r, 250)); }
-  if (S.svOk) {
+  if (DRIVE === 'sv' && !S.svOk && !S.svFailed) { showLoading('Street View hazırlanıyor…'); for (let i = 0; i < 40 && !S.svOk && !S.svFailed; i++) await new Promise((r) => setTimeout(r, 250)); }
+  if (DRIVE === 'sv' && S.svOk) {
     showLoading('Sokak aranıyor…');
     const node = await svFind(latDeg, lonDeg, 150);
     if (node) {
@@ -1053,7 +1130,8 @@ async function cesiumSpawn(lonDeg, latDeg, hdgDeg, label) {
   if (best) { c.lon = best.lon; c.lat = best.lat; c.h = best.height; c.onGround = true; S.syncGround = false; }
   else { c.lon = lon; c.lat = lat; c.h = S.spotH || S.groundGuess; c.onGround = false; S.syncGround = true; S.syncT = 0; }
   c.heading = (hdgDeg || 0) * DEG; c.vE = c.vN = c.vz = 0; c.steer = 0;
-  S.camHeading = c.heading; S.streetRef = c.h;
+  S.camHeading = c.heading; S.streetRef = c.h; S.onRoof = false; S.camR = null; S.camHit = null;
+  ceilInit(c.lat);
   showLoading(null);
   startDrive();
 }
@@ -1064,7 +1142,7 @@ function startDrive() {
   carCanvas.hidden = false;
   $('#hud').hidden = false;
   $('#touch').hidden = !isTouch;
-  if (!S.flags.started) { S.flags.started = true; setTimeout(() => toast(M.start, 'warn'), 400); if (S.mode === 'sv') setTimeout(() => toast(M.turnHint), 5200); }
+  if (!S.flags.started) { S.flags.started = true; setTimeout(() => toast(M.start, 'warn'), 400); setTimeout(() => toast(S.mode === 'sv' ? M.turnHint : M.ceilHint), 5200); }
   if (!isTouch) setTimeout(() => { $('#hint').style.opacity = '0'; $('#hint').style.transition = 'opacity 1s'; }, 18000);
 }
 function startFlight() {
@@ -1074,7 +1152,8 @@ function startFlight() {
   c.heading = S.hdg * DEG;
   c.vE = Math.sin(c.heading) * S.v; c.vN = Math.cos(c.heading) * S.v;
   c.h = S.groundGuess; c.vz = 0; c.onGround = false; c.pitch = 0; c.roll = 0;
-  S.syncGround = true; S.syncT = 0; S.camHeading = c.heading;
+  S.syncGround = true; S.syncT = 0; S.camHeading = c.heading; S.onRoof = false; S.camR = null; S.camHit = null;
+  ceilInit(c.lat);
   setMode('air');
   const fid = (S.flightId = (S.flightId || 0) + 1);
   withTimeout(scene.sampleHeightMostDetailed([C.Cartographic.fromRadians(c.lon, c.lat, 0)]), 8000).then((r) => {
@@ -1245,6 +1324,20 @@ function step3D(dt) {
     const agl = S.ground !== undefined ? c.h - S.ground : 99;
     if (k.space && airOK) Fup = m * G0 * 2.0;
     else if (airOK && c.vz < -4.5 && agl < 14) Fup = clamp(m * (G0 + (-c.vz - 2.5) * 2.2), 0, m * G0 * 3);
+    // ceiling: the thrusters ease off so the car settles at the tallest roof around, never above it
+    const ceil = CEIL.value;
+    if (ceil != null) {
+      const room = ceil - c.h;
+      if (room >= 0) {
+        if (Fup > 0) Fup = Math.min(Fup, clamp(m * (G0 + 1.4 * room - 1.8 * c.vz), 0, m * G0 * 2));
+        if (c.vz > 0 && c.vz * c.vz > 2 * G0 * room) Fup = 0;      // climbing too fast to stop in time: coast up to the roofline
+      } else {
+        if (c.vz > 0) c.vz *= Math.max(0, 1 - dt * 6);
+        // the roofline dropped (tall building left behind): sink gently while the thrusters are held
+        if (k.space && airOK) Fup = clamp(m * (G0 + 2 * (Math.max(-6, room * 0.6) - c.vz)), 0, m * G0 * 2);
+      }
+      if (k.space && room < 1.5) ceilHit();
+    }
     if (k.up && airOK) { Ffwd = m * PHYS.boostA; rearFrac = 1; }
     if (k.down && airOK) Ffwd = -m * 6;
     if (steerIn && airOK) { c.heading = wrapPi(c.heading + steerIn * 1.3 * dt); Frot = m * 1.2; }
@@ -1279,6 +1372,7 @@ function step3D(dt) {
       else if (g > c.h + 0.05 && !moved) c.h = g;
       else if (g < c.h - 0.8) { c.onGround = false; c.vz = 0; }
       else c.h += (g - c.h) * Math.min(1, dt * 14);
+      if (!S.onRoof) S.streetRef = c.h;     // street level follows the road up and down hills
     }
   } else {
     const nh = c.h + c.vz * dt;
@@ -1288,10 +1382,10 @@ function step3D(dt) {
       const v = c.vE * fE + c.vN * fN; c.vE = fE * v; c.vN = fN * v;
       if (impact > 9) { S.shake = 0.8; S.stats.crashes++; toast(M.hardLand, 'burnt', 'hard', 4); }
       else if (!S.flags.soft && impact < 4.5) { S.flags.soft = true; toast(M.softLand); }
-      if (S.streetRef != null && g - S.streetRef > 6) { toast(M.roof, '', 'roof', 20); addFine(20, 'roof', 20); }
-      else S.streetRef = g;
+      if (S.streetRef != null && g - S.streetRef > 6) { S.onRoof = true; toast(M.roof, '', 'roof', 20); addFine(20, 'roof', 20); }
+      else { S.onRoof = false; S.streetRef = g; }
       S.groundGuess = g;
-      if (S.svOk) landToStreet();
+      if (DRIVE === 'sv' && S.svOk) landToStreet();
       else if (S.mode === 'air') setMode('cz');
     } else c.h = nh;
   }
@@ -1301,15 +1395,32 @@ function step3D(dt) {
   c.steer = S.mode === 'cz' ? c.steer : S.steerIntent * 0.3;
 }
 const _tgt = new C.Cartesian3(), _hpr = new C.HeadingPitchRange();
+let camRayN = 0;
 function sync3DCamera(dt) {
   const c = S.car;
-  const enu = enuAt(c.lon, c.lat, c.h + CHASE.lift + (c.onGround ? 0 : 0.55));
+  const tH = c.h + CHASE.lift + (c.onGround ? 0 : 0.55);
+  enuAt(c.lon, c.lat, tH);
   C.Cartesian3.clone(_pos, _tgt);
   S.camHeading = wrapPi(S.camHeading + wrapPi(c.heading - S.camHeading) * (1 - Math.exp(-dt * 5)));
-  _hpr.heading = S.camHeading; _hpr.pitch = -CHASE.pitch; _hpr.range = CHASE.r;
-  if (S.camMode === 1) { _hpr.pitch = -0.42; _hpr.range = 40; }
+  const wide = S.camMode === 1, pitch = wide ? 0.42 : CHASE.pitch, want = wide ? 40 : CHASE.r;
+  // keep the camera out of walls: look back along the boom; if something is in the way, swing the camera up
+  // over the car, and only shorten the boom when even that is blocked
+  if (camRayN++ % (isTouch ? 2 : 1) === 0) {
+    let best = null;
+    for (const p of [pitch, pitch + 0.45, pitch + 0.9, 1.35]) {
+      const cp = Math.cos(p);
+      const d = castRay(c.lon, c.lat, tH, -Math.sin(S.camHeading) * cp, -Math.cos(S.camHeading) * cp, Math.sin(p));
+      const r = d === undefined || d >= want + 0.6 ? want : Math.max(2.2, d - 0.7);
+      if (!best || r > best.r + 0.5) best = { r, p };
+      if (r >= want * 0.7) break;                                  // a little shorter is fine; small street clutter should not swing it
+    }
+    S.camHit = best;
+  }
+  const tr = S.camHit ? S.camHit.r : want, tp = S.camHit ? S.camHit.p : pitch;
+  S.camR = S.camR == null || tr < S.camR ? tr : S.camR + (tr - S.camR) * Math.min(1, dt * 1.5);   // in fast, out slowly
+  S.camPitch = S.camPitch == null ? tp : S.camPitch + (tp - S.camPitch) * Math.min(1, dt * (tp > S.camPitch ? 8 : 2));
+  _hpr.heading = S.camHeading; _hpr.pitch = -S.camPitch; _hpr.range = S.camR;
   camera.lookAt(_tgt, _hpr);
-  void enu;
 }
 
 /* =====================================================================
@@ -1325,8 +1436,14 @@ function updHUD() {
   const air = !sv && (!c.onGround || S.syncGround);
   tag.textContent = sv ? 'SOKAKTA' : (S.syncGround ? 'KALKIŞ' : (!c.onGround ? (c.vz > 0.5 ? 'TIRMANIŞ' : 'HAVADA') : 'YERDE'));
   tag.classList.toggle('air', air);
-  const agl = !sv && S.ground !== undefined ? Math.max(0, c.h - S.ground) : null;
-  $('#alt').textContent = sv ? (pano && pano.getLocation && pano.getLocation() && pano.getLocation().shortDescription ? pano.getLocation().shortDescription : '') : (agl == null ? '' : `yerden ${fmt(agl, agl < 10 ? 1 : 0)} m`);
+  let altTxt = '';
+  if (sv) altTxt = pano && pano.getLocation && pano.getLocation() && pano.getLocation().shortDescription ? pano.getLocation().shortDescription : '';
+  else {
+    const ceilM = CEIL.value != null && CEIL.base != null ? fmt(CEIL.value - CEIL.base) : null;
+    if (air && CEIL.base != null) { const h = Math.max(0, c.h - CEIL.base); altTxt = `${fmt(h, h < 10 ? 1 : 0)} m` + (ceilM ? ` · tavan ${ceilM} m` : ''); }
+    else if (ceilM) altTxt = `tavan ${ceilM} m`;
+  }
+  $('#alt').textContent = altTxt;
   const af = S.air / PHYS.impulse, hoverLeft = S.air / PHYS.hoverN, narrow = innerWidth < 500;
   $('#airBar').style.width = (af * 100).toFixed(1) + '%';
   $('#airBarW').classList.toggle('low', af < 0.2);
@@ -1345,6 +1462,7 @@ function updHUD() {
 }
 function checks() {
   const c = S.car, f = S.flags, sv = S.mode === 'sv';
+  if (!sv) ceilUpdate();
   const kmh = (sv ? S.v : Math.hypot(c.vE, c.vN)) * 3.6;
   const onGround = sv || c.onGround;
   const agl = !sv && S.ground !== undefined ? c.h - S.ground : 0;
@@ -1387,7 +1505,10 @@ function frame(now) {
 function update(dt) {
   if (S.phase === 'drive') {
     S.t += dt; S.stats.t += dt;
-    try { if (S.mode === 'sv') { if (pano && R.nodes.length) stepSV(dt); } else { step3D(dt); sync3DCamera(dt); } } catch (e) { console.error(e); }
+    try {
+      if (S.mode === 'sv') { if (pano && R.nodes.length) stepSV(dt); }
+      else { step3D(dt); sync3DCamera(dt); if (!S.syncGround) ceilSample(); }
+    } catch (e) { console.error(e); }
     renderCar(dt);
     hudT += dt; chkT += dt;
     if (hudT > 0.066) { hudT = 0; updHUD(); }
@@ -1429,7 +1550,7 @@ function cycleCam() { S.camMode = (S.camMode + 1) % 2; toast('Kamera: ' + (S.cam
 function toggleRec() { S.rec = !S.rec; document.body.classList.toggle('rec', S.rec); if (S.rec) toast('Kayıt modu: arayüz gizlendi. Çıkmak için H ya da sağ üstteki düğme.', '', 'rec', 1); }
 function respawn() {
   toast(M.reset, '', 'reset', 2);
-  if (S.svOk && S.lastSV) { S.syncGround = false; enterSV(S.lastSV, S.hdg); return; }
+  if (DRIVE === 'sv' && S.svOk && S.lastSV) { S.syncGround = false; enterSV(S.lastSV, S.hdg); return; }
   if (S.lastSpawn) { const ls = S.lastSpawn; spawnAt(ls.lonDeg, ls.latDeg, ls.hdgDeg, ls.label); }
 }
 const handler = new C.ScreenSpaceEventHandler(scene.canvas);
@@ -1649,7 +1770,8 @@ function renderScience() {
 buildMenu();
 camera.setView({ destination: C.Cartesian3.fromDegrees(S.spot.lon, S.spot.lat - 0.006, 700), orientation: { heading: 0, pitch: -0.5, roll: 0 } });
 initMap().then(() => { probeSpotHeight(); if (qs.get('autostart')) $('#bStart').click(); });
-initSV();
+if (DRIVE === 'sv') { initSV(); $('#hintSteer').textContent = 'kavşakta dön'; }
+else $('#svStatus').hidden = true;
 </script>
 </body>
 </html>
