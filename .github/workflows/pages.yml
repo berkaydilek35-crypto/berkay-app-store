@@ -1,0 +1,44 @@
+name: Siteyi yayinla
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Google anahtarini yerlestir (repoda durmaz)
+        env:
+          GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
+        run: |
+          if [ -z "$GOOGLE_MAPS_KEY" ]; then
+            echo "::error::GOOGLE_MAPS_KEY secret eksik: Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          grep -rl "__GOOGLE_MAPS_KEY__" --include="*.html" . | xargs -r sed -i "s|__GOOGLE_MAPS_KEY__|${GOOGLE_MAPS_KEY}|g"
+          if grep -rq "__GOOGLE_MAPS_KEY__" --include="*.html" .; then echo "::error::yer tutucu kaldi"; exit 1; fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
