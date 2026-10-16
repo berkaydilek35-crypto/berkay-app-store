@@ -753,12 +753,12 @@ function toNode(data) {
 }
 async function svGet(id) {
   if (panoCache.has(id)) return panoCache.get(id);
-  const p = svService.getPanorama({ pano: id }).then((r) => toNode(r.data)).catch(() => null);
+  const p = (async () => { try { const r = await svService.getPanorama({ pano: id }); return r && r.data ? toNode(r.data) : null; } catch (e) { return null; } })();
   panoCache.set(id, p);
   return p;
 }
 async function svFind(lat, lng, radius) {
-  if (!svService) return null;
+  if (!svService || S.svFailed) return null;
   const tries = [
     { location: { lat, lng }, radius, sources: [SVL.StreetViewSource.GOOGLE], preference: SVL.StreetViewPreference.NEAREST },
     { location: { lat, lng }, radius, source: SVL.StreetViewSource.OUTDOOR, preference: SVL.StreetViewPreference.NEAREST },
@@ -766,6 +766,7 @@ async function svFind(lat, lng, radius) {
   for (const req of tries) {
     try {
       const r = await svService.getPanorama(req);
+      if (!r || !r.data) continue;
       const n = toNode(r.data);
       if (!n.links.length && req.sources) continue;          // a lone photo sphere: no roads to follow
       panoCache.set(n.id, Promise.resolve(n)); return n;
