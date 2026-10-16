@@ -387,7 +387,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
    Street View: Maps JavaScript API · Uçuş: Map Tiles API
    ===================================================================== */
 const CONFIG = {
-  GOOGLE_KEY: 'AIzaSyAxnPKIId5vHXIgsVJ8TemLYDLuH9l9sxo',
+  GOOGLE_KEY: '__GOOGLE_MAPS_KEY__',   // yayın sırasında GitHub Actions secret'ından gelir
   DEFAULT_SPOT: 'kordon',
 };
 
@@ -618,7 +618,8 @@ const bearD = (a, b) => wrap360(bearingTo(a.lng * DEG, a.lat * DEG, b.lng * DEG,
 /* ---------- map modes ---------- */
 function resolveKey() {
   if (qs.get('mod') === 'free') return '';
-  return qs.get('key') || lsGet('kt_gkey') || CONFIG.GOOGLE_KEY || '';
+  const cfg = CONFIG.GOOGLE_KEY.startsWith('__') ? '' : CONFIG.GOOGLE_KEY;
+  return qs.get('key') || lsGet('kt_gkey') || cfg || '';
 }
 function setStatus(sel, html, ready) { $(sel).innerHTML = (ready ? '' : '<span class="spin"></span>') + '<span>' + html + '</span>'; }
 function setModeChip() {
