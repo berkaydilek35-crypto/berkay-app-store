@@ -262,6 +262,33 @@ for (const a of apps) {
 }
 if (browser) await browser.close();
 
+// Önbellek kırıcı: site kodu değişince tarayıcılar eski kopyayı kullanmasın (/assets/site.js?v=…)
+{
+  const { createHash } = await import('node:crypto');
+  const assetsToStamp = ['assets/site.js', 'assets/site.css', 'assets/bk-app.js'];
+  const ver = {};
+  for (const a of assetsToStamp) ver['/' + a] = createHash('md5').update(await fs.readFile(path.join(ROOT, a))).digest('hex').slice(0, 8);
+  const htmlFiles = [];
+  async function walk(dir) {
+    for (const d of await fs.readdir(dir, { withFileTypes: true })) {
+      if (d.name === 'node_modules' || d.name.startsWith('.')) continue;
+      const p = path.join(dir, d.name);
+      if (d.isDirectory()) await walk(p); else if (d.name.endsWith('.html')) htmlFiles.push(p);
+    }
+  }
+  await walk(ROOT);
+  let stamped = 0;
+  for (const f of htmlFiles) {
+    let h = await fs.readFile(f, 'utf8'), changed = false;
+    for (const [url, v] of Object.entries(ver)) {
+      const re = new RegExp('(["\'])' + url.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '\\1', 'g');
+      if (re.test(h)) { h = h.replace(re, `$1${url}?v=${v}$1`); changed = true; }
+    }
+    if (changed) { await fs.writeFile(f, h); stamped++; }
+  }
+  log('sürüm damgası:', stamped, 'sayfa');
+}
+
 // Arama motorları için
 const today = new Date().toISOString().slice(0, 10);
 await fs.writeFile(path.join(ROOT, 'sitemap.xml'),
