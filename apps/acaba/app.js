@@ -657,13 +657,15 @@ const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt=e; $('#installBtn').hidden=false; $('#installBtn2').hidden=false; });
 async function doInstall(){
+  if(window.BKApp){ window.BKApp.install(); return; }
   if(installEvt){ installEvt.prompt(); try{ await installEvt.userChoice; }catch(e){} installEvt=null; return; }
   if(isIOS) toast('Safari\'de Paylaş butonuna dokun, sonra "Ana Ekrana Ekle".',5000);
   else toast('Tarayıcı menüsünden "Uygulamayı yükle"yi seçebilirsin.',4500);
 }
 $('#installBtn').onclick=doInstall; $('#installBtn2').onclick=doInstall;
-if(isIOS && !isStandalone){ $('#installBtn2').hidden=false; }
-/* Wix barındırması kendi sw.js'ini sunduğu için servis çalışanı kaydedilmiyor (sayfa beklenmedik yenilenmesin). */
+// Ana ekrana ekleme penceresi (/assets/bk-app.js) her cihaz için doğru adımları gösterir; buton hep görünür
+if(!isStandalone && location.protocol!=='file:'){ $('#installBtn2').hidden=false; }
+/* Servis çalışanı /assets/bk-app.js tarafından kaydedilir (sw.js): ana ekrandan internetsiz açılır. */
 
 /* Bağlantılar */
 $('#go').onclick = () => run(false);
