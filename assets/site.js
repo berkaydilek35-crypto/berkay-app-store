@@ -25,6 +25,12 @@
     description: 'Maç, patron, hoca, anne, sevgili, ev sahibi… Kafana takılan "acaba"yı yazıyorsun. Uygulama konuyu ve rakibini tanıyıp abartılı, komik bir cevap kuruyor; bunu paylaşılabilir bir karta ve sesli, 17 saniyelik dikey bir videoya dönüştürüyor.',
     audience: 'Aklına takılana gülmek ve bunu hikâye ya da Reels olarak paylaşmak isteyen herkes.',
     testNote: 'Saha Testi 001, ilk sürüm. Tamamen tarayıcıda çalışıyor: yazdığın metin cihazından çıkmıyor, kayıt ya da hesap yok. Video telefonda/bilgisayarda üretilip indiriliyor. Ana ekrana ekleyince internetsiz de çalışıyor.'
+  }, {
+    title: 'Çöpİzmir', slug: 'copizmir', tagline: 'İzmir\'in çöpleri bir haritaya dökülüyor.',
+    category: 'Şehir', status: 'Yakında', testNumber: 2, featuredOrder: 2, coverImage: '/assets/apps/copizmir/teaser.jpg'
+  }, {
+    title: 'Semt Ligi', slug: 'semt-ligi', tagline: 'Mahalleler arası spor ligi. Senin semtin kaçıncı?',
+    category: 'Spor', status: 'Yakında', testNumber: 3, featuredOrder: 3, coverImage: '/assets/apps/semt-ligi/teaser.jpg'
   }];
 
   var hasDOM = typeof document !== 'undefined';
@@ -88,7 +94,8 @@
       screens: Array.isArray(d.screenshots) ? d.screenshots.map(rawOf).filter(Boolean) : [],
       appUrl: (d.appUrl || '').trim(), download: (d.downloadUrl || '').trim(), demo: (d.demoVideoUrl || '').trim(), ig: (d.instagramUrl || '').trim(),
       date: dateOf(d.publishDate), order: (order === 0 || order) ? Number(order) : null,
-      description: d.description || '', audience: d.audience || '', testNote: d.testNote || ''
+      description: d.description || '', audience: d.audience || '', testNote: d.testNote || '',
+      sticker: (d.sticker || '').trim()
     };
   }
   var RESERVED = ['apps', 'assets', 'downloads', 'scripts', 'worker', 'app', 'index'];
@@ -245,10 +252,16 @@
       '<div class="row">' + openButton(a, 'small') + installButton(a, 'small') + '<a class="link" href="' + detailUrl(a) + '">Detay</a></div>' +
     '</article>';
   }
-  // CMS'te durumu "Yakında" olan uygulama
+  // CMS'te durumu "Yakında" olan uygulama: kapak bulanık, üstünde merak ettiren çıkartma.
+  // Çıkartma yazısı CMS'teki "sticker" alanından gelir; boşsa test numarasına göre sırayla seçilir.
+  var STICKERS = ['SIZDI 👀', 'PSST… 🤫', 'KİLİTLİ 🔒', 'GİZLİ TEST 🤐'];
+  function stickerText(a) { return a.sticker || STICKERS[Math.max(0, (a.testNumber || 2) - 2) % STICKERS.length]; }
   function soonCard(a) {
+    var img = a.cover ? '<img src="' + esc(imgSrc(a.cover, 720, 900)) + '" alt="" loading="lazy" decoding="async" width="720" height="900">' : '<div class="poster" aria-hidden="true"><span class="pn">' + numLabel(a.testNumber) + '</span></div>';
+    var tilt = (a.testNumber || 0) % 2 ? 'l' : 'r';
     return '<article class="card soon">' +
-      '<div class="cover">' + coverHTML(a, 720, 900) + '</div>' +
+      '<div class="cover teaser" aria-hidden="true">' + img + (a.testNumber ? '<span class="badge">' + numLabel(a.testNumber) + '</span>' : '') +
+        '<span class="sticker ' + tilt + '"><b>' + esc(stickerText(a)) + '</b><small>' + (a.testNumber ? 'Saha Testi ' + numLabel(a.testNumber) : 'Yakında') + '</small></span></div>' +
       '<h3>' + esc(a.title) + '</h3>' +
       '<p>' + esc(a.tagline) + '</p>' +
       '<div class="row"><a class="btn small" href="' + esc(a.ig || IG) + '" target="_blank" rel="noopener">Takip et, ilk sen dene</a></div>' +
