@@ -4,46 +4,60 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Berkay Napıyor? — Saha testleri ve uygulamalar</title>
-<meta name="description" content="Berkay Dilek'in yapıp gerçekten test ettiği uygulamalar. Bas, aç, dene.">
+<meta name="description" content="Berkay Dilek'in yapıp gerçekten test ettiği uygulamalar. Bas, aç, dene. Kayıt yok, ücret yok.">
 <meta name="theme-color" content="#F4F1E9">
+<link rel="canonical" href="https://berkay.instaassist.tr/">
+<meta property="og:site_name" content="Berkay Napıyor?">
 <meta property="og:title" content="Berkay Napıyor?">
-<meta property="og:description" content="Aklıma gelen fikirleri yapıp gerçekten deniyorum. Uygulamalara bas, hemen dene.">
+<meta property="og:description" content="Aklıma geleni yapıp deniyorum. Uygulamalara bas, hemen dene.">
 <meta property="og:type" content="website">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:url" content="https://berkay.instaassist.tr/">
+<meta property="og:image" content="https://berkay.instaassist.tr/assets/og/home.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="mark" href="./"><i></i>Berkay Napıyor?</a>
+    <a class="mark" href="/"><i></i>Berkay Napıyor?</a>
     <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
   </header>
 
   <section class="hero">
-    <h1><span><b>Aklıma gelen</b></span><span><b>fikirleri yapıp</b></span><span><b>gerçekten deniyorum.</b></span></h1>
-    <p>Ben Berkay. Yapay zekâ fikirlerini çalışan uygulamalara çeviriyor, sonra sahada test ediyorum. Canlı olanlara bas, hemen dene.</p>
-    <div class="cta">
-      <a class="btn signal" href="#katalog">Uygulamaları gör</a>
-      <a class="btn ghost" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">Saha Testi videoları</a>
-    </div>
+    <h1><span><b>Aklıma geleni</b></span><span><b>yapıp deniyorum.</b></span></h1>
+    <p>Yapay zekâyla yaptığım uygulamalar. Bas, aç, dene; kayıt yok, ücret yok.</p>
   </section>
 
-  <section class="featured" id="featured" aria-label="Öne çıkan uygulama"></section>
+  <section class="featured" id="featured" aria-label="Son çıkan uygulama"><!--bk:featured--></section>
 
   <section class="catalog" id="katalog" aria-labelledby="catTitle">
-    <h2 id="catTitle">Tüm uygulamalar <small id="count"></small></h2>
-    <div class="tools">
+    <h2 id="catTitle"><span id="catName">Tüm uygulamalar</span> <small id="count"></small></h2>
+    <div class="tools" id="tools" hidden>
       <input class="search" id="q" type="search" placeholder="Uygulama ara" autocomplete="off" aria-label="Uygulama ara">
       <div class="chips" id="chips" role="group" aria-label="Kategori"></div>
     </div>
-    <div class="grid" id="grid"><p class="loading-note">Uygulamalar yükleniyor…</p></div>
+    <div class="grid" id="grid"><!--bk:grid--></div>
   </section>
 
   <section class="about" id="berkay" aria-labelledby="aboutTitle">
-    <h2 id="aboutTitle">Berkay kim?</h2>
+    <div class="steps-col">
+      <ol class="steps" aria-label="Saha Testi nasıl işler?">
+        <li><b>01</b><span>Fikir</span><small>Aklıma takılır, bekletmem.</small></li>
+        <li><b>02</b><span>Yapım</span><small>Birkaç günde çalışan sürüm.</small></li>
+        <li><b>03</b><span>Test</span><small>Gerçek insanlarla, sahada.</small></li>
+        <li><b>04</b><span>Sonuç</span><small>Ne olduysa Instagram'da.</small></li>
+      </ol>
+      <h2 id="aboutTitle">Berkay kim?</h2>
+    </div>
     <div class="side">
       <p>Girişimciyim, InstaAssist'in kurucusuyum. Aklıma takılan fikri bekletmiyorum; birkaç gün içinde çalışan bir uygulamaya çevirip gerçek insanlarla deniyorum.</p>
       <p>Instagram'daki Saha Testi serisinde her uygulamanın fikrini, yapımını, testini ve sonucunu olduğu gibi paylaşıyorum. Bir fikrin ya da işletmen için bir otomasyon ihtiyacın varsa yaz.</p>
@@ -55,38 +69,33 @@
   </section>
 
   <footer>
-    <span>© 2026 Berkay Dilek</span>
-    <span>İzmir'de yapıldı, sahada test edildi.</span>
+    <span>© 2026 Berkay Dilek · İzmir'de yapıldı, sahada test edildi.</span>
+    <span>Çerez yok. Uygulamaların kaç kez açıldığı isimsiz sayılır.</span>
   </footer>
 </div>
 
-<script src="assets/site.js"></script>
+<!--bk:data-->
+<script src="/assets/site.js"></script>
 <script>
 (async function () {
-  var B = window.BK, apps = await B.getApps();
-  var state = { cat: 'Hepsi', q: '' };
+  var B = window.BK, apps = await B.getApps(), stats = (function () { var e = document.getElementById('bk-data'); try { return JSON.parse(e.textContent).stats || {}; } catch (x) { return {}; } })();
+  var state = { cat: 'Hepsi', q: '' }, rendered = false;
+  var fe = document.getElementById('featured'), grid = document.getElementById('grid'), tools = document.getElementById('tools');
 
-  // Öne çıkan: sıralamada ilk, açılabilir uygulama
-  var f = apps.find(B.canOpen) || apps[0];
-  var fe = document.getElementById('featured');
-  if (f) {
-    fe.innerHTML =
-      '<div class="text">' +
-        '<div class="num" aria-hidden="true">' + B.numLabel(f.testNumber) + '</div>' +
-        '<h2>' + B.esc(f.title) + '</h2>' +
-        '<p class="lead">' + B.esc(f.tagline) + '</p>' +
-        '<div class="meta">' + B.statusChip(f).replace('class="status', 'class="tag status') + (f.category ? '<span class="tag">' + B.esc(f.category) + '</span>' : '') + '</div>' +
-        '<div class="actions">' + B.openButton(f, 'signal') + B.downloadButton(f) + '<a class="link" href="' + B.detailUrl(f) + '">Nasıl yaptım, nasıl test ettim?</a></div>' +
-      '</div>' +
-      '<a class="cover" href="' + B.detailUrl(f) + '" aria-label="' + B.esc(f.title) + ' detayları">' + B.coverHTML(f, 960, 1200) + '</a>';
-  } else { fe.hidden = true; }
+  function renderFeatured() {
+    var f = B.pickFeatured(apps);
+    if (f) { fe.innerHTML = B.featuredHTML(f, stats); fe.hidden = false; } else { fe.hidden = true; }
+    return f;
+  }
 
-  // Kategoriler veriden gelir
-  var cats = ['Hepsi'];
-  apps.forEach(function (a) { if (a.category && cats.indexOf(a.category) < 0) cats.push(a.category); });
   var chips = document.getElementById('chips');
+  function cats() {
+    var c = ['Hepsi'];
+    apps.forEach(function (a) { if (a.category && !B.isSoon(a) && c.indexOf(a.category) < 0) c.push(a.category); });
+    return c;
+  }
   function renderChips() {
-    chips.innerHTML = cats.map(function (c) {
+    chips.innerHTML = cats().map(function (c) {
       return '<button type="button" class="chip" aria-pressed="' + (state.cat === c) + '" data-c="' + B.esc(c) + '">' + B.esc(c) + '</button>';
     }).join('');
   }
@@ -96,7 +105,6 @@
   });
   document.getElementById('q').addEventListener('input', function (e) { state.q = e.target.value; renderGrid(); });
 
-  var grid = document.getElementById('grid');
   function matches(a) {
     if (state.cat !== 'Hepsi' && a.category !== state.cat) return false;
     var q = B.trLower(state.q).trim();
@@ -104,24 +112,36 @@
     return B.trLower([a.title, a.tagline, a.category, a.description].join(' ')).indexOf(q) >= 0;
   }
   function renderGrid() {
-    var list = apps.filter(matches);
-    document.getElementById('count').textContent = list.length + ' / ' + apps.length;
-    if (!list.length) {
+    var f = B.pickFeatured(apps), p = B.catalogParts(apps, f);
+    tools.hidden = !p.showTools;
+    // Arama açıksa her şey listelenir; değilse öne çıkan tekrar edilmez
+    var live = p.showTools ? apps.filter(function (a) { return !B.isSoon(a); }).filter(matches) : p.live;
+    var searching = p.showTools && (state.q || state.cat !== 'Hepsi');
+    document.getElementById('catName').textContent = live.length || searching ? 'Tüm uygulamalar' : 'Sıradakiler';
+    document.getElementById('count').textContent = p.showTools ? live.length + ' / ' + apps.filter(function (a) { return !B.isSoon(a); }).length : '';
+    if (searching && !live.length) {
       grid.innerHTML = '<div class="empty"><p>Bu aramayla eşleşen uygulama yok.</p><button type="button" class="btn small ghost" id="clear">Filtreleri temizle</button></div>';
       document.getElementById('clear').onclick = function () { state = { cat: 'Hepsi', q: '' }; document.getElementById('q').value = ''; renderChips(); renderGrid(); };
       return;
     }
-    grid.innerHTML = list.map(function (a) {
-      return '<article class="card">' +
-        '<a class="cover" href="' + B.detailUrl(a) + '" aria-label="' + B.esc(a.title) + ' detayları">' + B.coverHTML(a, 720, 900) + '</a>' +
-        '<h3><a href="' + B.detailUrl(a) + '">' + B.esc(a.title) + '</a></h3>' +
-        '<p>' + B.esc(a.tagline) + '</p>' +
-        '<div class="row">' + B.openButton(a, 'small') + B.downloadButton(a, 'small') + '<a class="link" href="' + B.detailUrl(a) + '">Detay</a></div>' +
-      '</article>';
-    }).join('');
+    grid.innerHTML = live.map(function (a) { return B.cardHTML(a, stats); }).join('') +
+      (searching ? '' : p.soon.map(function (a) { return B.cardHTML(a, stats); }).join('') + (p.next ? B.nextCard(p.next) : ''));
   }
-  renderChips(); renderGrid();
+  function renderAll() {
+    if (rendered) document.body.classList.add('no-anim');
+    renderFeatured(); renderChips(); renderGrid(); rendered = true;
+  }
+  renderAll();
+
+  // Arka planda: CMS'te yeni uygulama ya da yeni sayılar varsa güncelle
+  function sig() { return JSON.stringify(apps) + '|' + apps.map(function (a) { var n = B.tried(a, stats); return n >= B.MIN_TRIED ? n : 0; }).join(','); }
+  var before = sig();
+  var fresh = await Promise.all([B.freshApps(apps), B.getStats()]);
+  if (fresh[0]) apps = fresh[0];
+  stats = fresh[1] || stats;
+  if (sig() !== before) renderAll();
 })();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(function () {});
 </script>
 </body>
 </html>

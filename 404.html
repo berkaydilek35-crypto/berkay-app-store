@@ -3,25 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sayfa yok — Berkay Napıyor?</title>
+<!--bk:head-->
+<title>Berkay Napıyor?</title>
+<meta name="description" content="Berkay Dilek'in yapıp sahada test ettiği uygulamalar.">
 <meta name="robots" content="noindex">
+<!--/bk:head-->
+<meta name="theme-color" content="#F4F1E9">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-<div class="wrap">
+<!-- Detay şablonu: scripts/build.mjs her uygulama için /<slug>/index.html üretir. Henüz üretilmemiş yeni bir uygulama
+     ya da eski bir adres bu sayfaya düşer; sayfa adresteki kısa adı okuyup uygulamayı kendisi çizer. -->
+<div class="wrap" id="page">
   <header class="top">
     <a class="mark" href="/"><i></i>Berkay Napıyor?</a>
     <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
   </header>
-  <section class="hero">
-    <h1><span><b>Bu test</b></span><span><b>burada yok.</b></span></h1>
-    <p>Aradığın sayfa taşınmış ya da hiç yapılmamış olabilir. Canlı uygulamaların hepsi ana sayfada.</p>
-    <div class="cta"><a class="btn signal" href="/">Uygulamalara dön</a></div>
-  </section>
+  <a class="back" href="/#katalog">← Tüm uygulamalar</a>
+  <main id="detail"><!--bk:detail--><p class="loading-note">Yükleniyor…</p><!--/bk:detail--></main>
+  <footer>
+    <span>© 2026 Berkay Dilek · İzmir'de yapıldı, sahada test edildi.</span>
+    <span>Çerez yok. Uygulamaların kaç kez açıldığı isimsiz sayılır.</span>
+  </footer>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!--bk:data-->
+<script src="/assets/site.js"></script>
+<script>
+(async function () {
+  var B = window.BK, el = document.getElementById('detail');
+  var m = document.querySelector('meta[name="bk-slug"]');
+  var slug = m ? m.content : '';
+  if (!slug) { var pm = location.pathname.match(/^\/([a-z0-9-]+)\/?$/i); slug = pm ? pm[1].toLowerCase() : ''; }
+  if (!slug) slug = (new URLSearchParams(location.search).get('a') || '').toLowerCase();
+  if (slug === 'bize-ne-yapacak') slug = 'acaba'; // eski ad
+  // Eski "app.html?a=" adreslerini kısa adrese taşı
+  if (!m && slug && !/^\/[a-z0-9-]+\/?$/i.test(location.pathname)) history.replaceState(null, '', '/' + slug + '/');
+
+  var apps = await B.getApps(), stats = (function () { var e = document.getElementById('bk-data'); try { return JSON.parse(e.textContent).stats || {}; } catch (x) { return {}; } })();
+  var a = null, drawn = false;
+
+  function render() {
+    a = apps.find(function (x) { return x.slug === slug; }) || null;
+    if (!a) {
+      document.title = 'Sayfa yok — Berkay Napıyor?';
+      el.innerHTML = B.notFoundHTML();
+      document.getElementById('page').classList.remove('has-sticky');
+      return;
+    }
+    document.title = a.title + ' — Berkay Napıyor?';
+    var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', a.tagline);
+    if (drawn) document.body.classList.add('no-anim');
+    el.innerHTML = B.detailHTML(a, stats);
+    drawn = true;
+    wire();
+  }
+
+  var toast = document.getElementById('toast'), tt;
+  function say(msg) { toast.textContent = msg; toast.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { toast.classList.remove('show'); }, 2200); }
+
+  function wire() {
+    if (B.canOpen(a)) {
+      document.getElementById('page').classList.add('has-sticky');
+      var st = document.querySelector('.sticky');
+      if (!st) { st = document.createElement('div'); st.className = 'sticky'; document.body.appendChild(st); }
+      st.innerHTML = B.openButton(a, 'signal') + B.installButton(a);
+    }
+    var prev = document.getElementById('prev');
+    function loadPreview() {
+      var ph = document.getElementById('phone'); if (!ph || ph.querySelector('iframe')) return;
+      var f = document.createElement('iframe');
+      f.src = a.appUrl; f.title = a.title + ' canlı önizleme'; f.loading = 'lazy';
+      f.setAttribute('allow', 'autoplay; clipboard-write; web-share');
+      ph.innerHTML = ''; ph.appendChild(f);
+    }
+    if (prev) {
+      prev.addEventListener('click', loadPreview);
+      if (window.matchMedia('(min-width: 900px)').matches) loadPreview();
+    }
+    B.wireVideos(el);
+    document.getElementById('share').addEventListener('click', async function () {
+      var url = B.shareUrl(a), data = { title: a.title, text: a.tagline, url: url };
+      try { if (navigator.share) { await navigator.share(data); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+      try { await navigator.clipboard.writeText(url); say('Bağlantı kopyalandı'); } catch (e) { say(url); }
+    });
+  }
+
+  render();
+  if (a) { try { var vk = 'bk-v-' + a.slug; if (!sessionStorage.getItem(vk)) { sessionStorage.setItem(vk, '1'); B.track(a.slug, 'view'); } } catch (e) {} }
+
+  // Arka planda tazele; sadece görünen bir şey değiştiyse yeniden çiz (önizleme boşuna yeniden yüklenmesin)
+  function sig() {
+    var x = apps.find(function (y) { return y.slug === slug; });
+    if (!x) return 'yok';
+    var n = B.tried(x, stats);
+    return JSON.stringify(x) + '|' + (n >= B.MIN_TRIED ? n + '/' + B.installs(x, stats) : '');
+  }
+  var before = sig();
+  var fresh = await Promise.all([B.freshApps(apps), B.getStats()]);
+  if (fresh[0]) apps = fresh[0];
+  stats = fresh[1] || stats;
+  if (sig() !== before) render();
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(function () {});
+</script>
 </body>
 </html>
