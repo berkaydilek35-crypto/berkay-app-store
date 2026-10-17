@@ -1,5 +1,5 @@
 /* Acaba? — ana ekrandan internetsiz açılsın diye uygulama dosyalarını saklar. */
-const V = 'acaba-v2';
+const V = 'acaba-v3';
 const SHELL = ['./', './index.html', './app.js', './data.js', './icon.svg', './icon-192.png', './icon-512.png', './manifest.json', '/assets/bk-app.js'];
 
 self.addEventListener('install', (e) => {
@@ -29,11 +29,15 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // Dosyalar ve yazı tipleri: önbellekten hemen, arkada tazele
+  // Yazı tipleri değişmez: önbellekten. Uygulama dosyaları: önce ağ (güncelleme hemen gelsin), ağ yoksa önbellek
+  if (fonts) {
+    e.respondWith(caches.open(V).then((c) => c.match(r).then((hit) => hit || fetch(r).then((res) => { c.put(r, res.clone()); return res; }))));
+    return;
+  }
   e.respondWith(
-    caches.open(V).then((c) => c.match(r, { ignoreSearch: own }).then((hit) => {
-      const net = fetch(r).then((res) => { if (res.ok || res.type === 'opaque') c.put(r, res.clone()); return res; }).catch(() => hit);
-      return hit || net;
-    }))
+    fetch(r).then((res) => {
+      if (res.ok) { const copy = res.clone(); caches.open(V).then((c) => c.put(r, copy)); }
+      return res;
+    }).catch(() => caches.match(r, { ignoreSearch: true }))
   );
 });
