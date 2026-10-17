@@ -1,6 +1,6 @@
 /* Berkay Napıyor? — site servis çalışanı. Sadece sitenin kendi sayfalarını ve dosyalarını önbelleğe alır.
    /apps/ altındaki uygulamalara dokunmaz (her birinin kendi çalışanı var); CMS, sayaç ve yazı tipleri doğrudan ağdan gelir. */
-const V = 'bk-hub-v1';
+const V = 'bk-hub-v2';
 const SHELL = ['/', '/assets/site.css', '/assets/site.js', '/favicon.svg', '/assets/icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -30,13 +30,13 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // Site dosyaları: önbellekten hemen ver, arkada tazele
+  // Site dosyaları: önce ağ (yeni sürüm hemen gelsin), ağ yoksa önbellek
   if (u.pathname.startsWith('/assets/') || u.pathname === '/favicon.svg') {
     e.respondWith(
-      caches.open(V).then((c) => c.match(r).then((hit) => {
-        const net = fetch(r).then((res) => { if (res.ok) c.put(r, res.clone()); return res; }).catch(() => hit);
-        return hit || net;
-      }))
+      fetch(r).then((res) => {
+        if (res.ok) { const copy = res.clone(); caches.open(V).then((c) => c.put(r, copy)); }
+        return res;
+      }).catch(() => caches.match(r, { ignoreSearch: true }))
     );
   }
 });
