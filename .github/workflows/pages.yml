@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'   # her saat: Wix CMS'e eklenen uygulama ve sayaç rakamları sayfalara işlensin
 
 permissions:
   contents: read
@@ -22,6 +24,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sayfalari hazirla (CMS, kisa linkler, paylasim gorselleri)
+        run: |
+          npm i --no-save --no-audit --no-fund playwright-core@1.56.0
+          node scripts/build.mjs
+          rm -rf node_modules package-lock.json package.json
 
       - name: Google anahtarini yerlestir (repoda durmaz)
         env:
