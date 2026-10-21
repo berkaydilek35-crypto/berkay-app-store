@@ -188,7 +188,7 @@
   function siteVisitors(stats) { var s = stats && stats.site; return s ? (s.visitor || 0) : 0; }
   function siteCounterHTML(stats) {
     var n = siteVisitors(stats);
-    return n >= PUBLIC_MIN ? '<span class="livecount"><i aria-hidden="true"></i><b>' + plural(n) + '</b> kişi girdi</span>' : '';
+    return n >= PUBLIC_MIN ? '<span class="livecount"><i aria-hidden="true"></i><b>' + plural(n) + '</b> kişi denedi</span>' : '';
   }
   function tried(app, stats) { var s = stats && stats[app.slug]; return s ? (s.first || 0) : 0; }
   function installs(app, stats) { var s = stats && stats[app.slug]; return s ? (s.installed || 0) : 0; }
