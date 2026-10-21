@@ -26,3 +26,6 @@ berkay.instaassist.tr — Berkay Dilek'in (@berkay.builds) yapıp sahada test et
 - `assets/site.js` veri + çizim kodu (tarayıcı ve derleme aynı kodu kullanır), `assets/bk-app.js` uygulamaların "İndir" penceresi ve sayacı.
 - Sayaç: `worker/sayac.js` (Cloudflare Worker `bk-sayac` + D1 `bk-sayac`). Sadece "hangi uygulama, ne oldu, hangi gün" sayılır; IP, çerez, kişisel veri yok.
   "X kişi denedi" rozeti 10 kişiden sonra görünür (`MIN_TRIED`).
+- Siteye giren: cihaz başına bir kez sayılır (uygulama sayfalarına doğrudan gelenler dahil). 10.000'i geçince ana sayfada
+  "X kişi girdi" olarak kendiliğinden görünür (`PUBLIC_MIN`, `assets/site.js`). O zamana kadar rakamlar sadece panelde.
+- Panel: `/panel-bffoj4j2/` (listede yok, arama motorlarına kapalı). Paneli açan cihazın girişleri sayılmaz.

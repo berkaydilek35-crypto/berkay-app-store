@@ -35,6 +35,7 @@
   <section class="hero">
     <h1><span><b>Aklıma geleni</b></span><span><b>yapıp deniyorum.</b></span></h1>
     <p>Yapay zekâyla yaptığım uygulamalar. Bas, aç, dene; kayıt yok, ücret yok.</p>
+    <div id="liveCount"><!--bk:count--></div>
   </section>
 
   <section class="featured" id="featured" aria-label="Son çıkan uygulama"><!--bk:featured--></section>
@@ -130,6 +131,7 @@
   function renderAll() {
     if (rendered) document.body.classList.add('no-anim');
     renderFeatured(); renderChips(); renderGrid(); rendered = true;
+    document.getElementById('liveCount').innerHTML = B.siteCounterHTML(stats);
   }
   renderAll();
 
