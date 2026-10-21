@@ -23,19 +23,26 @@
   var deferred = null;
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
-  function track(kind) {
-    if (!SAYAC || !slug || location.protocol !== 'https:') return;
+  function send(a, kind) {
+    if (!SAYAC || !a || location.protocol !== 'https:') return;
+    if (store('bk-me')) return; // Berkay'ın kendi cihazları (paneli açtığı cihazlar) sayılmaz
     try {
-      var body = JSON.stringify({ a: slug, t: kind });
+      var body = JSON.stringify({ a: a, t: kind });
       if (navigator.sendBeacon) navigator.sendBeacon(SAYAC + '/e', body);
       else fetch(SAYAC + '/e', { method: 'POST', body: body, keepalive: true, mode: 'no-cors' });
     } catch (e) {}
   }
+  function track(kind) { send(slug, kind); }
 
   // Sayaç: her açılış + cihazda ilk açılış + ana ekrandan ilk açılış (iPhone'da yükleme ancak böyle anlaşılır).
   // Sitedeki canlı önizleme penceresinde (iframe) sayılmaz: orada kimse uygulamayı kendisi açmadı.
   var framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
   if (!framed) {
+    // Siteye giren (uygulamaya doğrudan gelenler de siteye girmiş sayılır; ana sayfayla aynı işaretler, çift sayım yok)
+    if (location.hostname === 'berkay.instaassist.tr') {
+      if (!isStandalone && !store('bk-v')) { store('bk-v', '1'); if (store('bk-v')) send('site', 'visitor'); }
+      try { if (!sessionStorage.getItem('bk-s')) { sessionStorage.setItem('bk-s', '1'); send('site', 'visit'); } } catch (e) {}
+    }
     track(isStandalone ? 'open-home' : 'open');
     if (!store('bk-seen-' + slug)) { store('bk-seen-' + slug, '1'); track('first'); }
     if (isStandalone && !store('bk-inst-' + slug)) { store('bk-inst-' + slug, '1'); track('installed'); }

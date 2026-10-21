@@ -40,6 +40,11 @@ button{font:inherit;color:inherit}
 @media (min-width:900px){.hero{padding:22px 0 40px}.hero p{margin-top:20px}}
 .hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
 @keyframes rise{from{transform:translateY(105%)}to{transform:none}}
+#liveCount:empty{display:none}
+#liveCount{margin-top:16px}
+.livecount{display:inline-flex;align-items:center;gap:10px;padding:9px 16px 9px 14px;border-radius:999px;background:var(--ink);color:var(--paper);font-weight:700;font-size:15px}
+.livecount b{font-weight:900;font-stretch:72%;font-size:21px;line-height:1;letter-spacing:.02em;color:var(--signal)}
+.livecount i{width:9px;height:9px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 0 rgba(255,91,54,.6);animation:pulse 1.8s infinite}
 
 /* Öne çıkan */
 .featured{display:grid;gap:22px;margin:0 0 64px}
@@ -203,6 +208,6 @@ footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;paddin
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .hero h1 span b,.featured .num{animation:none}
-  .status.live::before,.sticker{animation:none}
+  .status.live::before,.sticker,.livecount i{animation:none}
   .btn{transition:none}
 }

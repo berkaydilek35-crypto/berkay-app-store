@@ -7,11 +7,12 @@
   var COLLECTION = 'apps';
   var TOKEN_KEY = 'bk-visitor-' + WIX_CLIENT_ID;
   var CACHE_KEY = 'bk-apps-v2';
-  var STATS_KEY = 'bk-stats-v1';
   var IG = 'https://www.instagram.com/berkay.builds/';
   var SITE = 'https://berkay.instaassist.tr';
   var SAYAC = 'https://bk-sayac.berkaydilekk.workers.dev'; // isimsiz sayaç (worker/sayac.js)
   var MIN_TRIED = 10;   // "X kişi denedi" rozeti bu sayıdan sonra görünür
+  var PUBLIC_MIN = 10000; // siteye giren sayısı bu sayıya ulaşınca ana sayfada görünür (o zamana kadar sadece panelde)
+  var HOST = 'berkay.instaassist.tr'; // sayaç sadece gerçek sitede çalışır
   var SEARCH_MIN = 6;   // arama ve filtre bu kadar uygulama olunca açılır
 
   // CMS'e ulaşılamazsa sayfa boş kalmasın diye yedek kayıt (CMS'tekiyle aynı içerik)
@@ -98,7 +99,7 @@
       sticker: (d.sticker || '').trim()
     };
   }
-  var RESERVED = ['apps', 'assets', 'downloads', 'scripts', 'worker', 'app', 'index'];
+  var RESERVED = ['apps', 'assets', 'downloads', 'scripts', 'worker', 'app', 'index', 'site'];
   function validSlug(s) { return /^[a-z0-9][a-z0-9-]{0,48}$/.test(s) && RESERVED.indexOf(s) < 0; }
   function sortApps(list) {
     return list.slice().sort(function (a, b) {
@@ -153,26 +154,41 @@
 
   /* ---------- İsimsiz sayaç ---------- */
   // Kim olduğun tutulmaz: sadece "hangi uygulama, ne oldu, hangi gün" sayılır. Çerez yok.
+  function owner() { try { return !!localStorage.getItem('bk-me'); } catch (e) { return false; } }
   function track(slug, kind) {
     if (!hasDOM || !SAYAC || !slug || !kind) return;
+    if (location.hostname !== HOST || owner()) return; // yerel denemeler ve Berkay'ın kendi cihazları sayılmaz
     try {
       var body = JSON.stringify({ a: slug, t: kind });
       if (navigator.sendBeacon) navigator.sendBeacon(SAYAC + '/e', body);
       else fetch(SAYAC + '/e', { method: 'POST', body: body, keepalive: true, mode: 'no-cors' });
     } catch (e) {}
   }
-  async function getStats() {
+  // Ziyaretçi sayfaları sayıları derlemede gömülü halinden okur (saatte bir tazelenir) ve sayaca istek atmaz;
+  // böylece ücretsiz limit ziyaretçi sayımına kalır. Canlı rakam sadece panelde: getStats(true).
+  async function getStats(live) {
     var e = embedded();
-    var c = load(STATS_KEY, 'sessionStorage');
-    if (c && Date.now() - c.t < 300000) return c.s || {};
-    if (!SAYAC) return (e && e.stats) || {};
+    if (!live || !SAYAC) return (e && e.stats) || {};
     try {
-      var r = await fetch(SAYAC + '/stats', { mode: 'cors' });
+      var r = await fetch(SAYAC + '/stats', { mode: 'cors', cache: 'no-store' });
       if (!r.ok) throw new Error('stats ' + r.status);
-      var s = await r.json();
-      save(STATS_KEY, { t: Date.now(), s: s }, 'sessionStorage');
-      return s;
+      return await r.json();
     } catch (err) { return (e && e.stats) || {}; }
+  }
+  // Siteye giren: cihaz başına bir kez "visitor", oturum başına bir kez "visit".
+  // Ana ekrandan açılan uygulama ayrı depolama kullanır; orada yeni kişi sayılmaz.
+  function visit() {
+    if (!hasDOM) return;
+    try { if (window.self !== window.top) return; } catch (e) { return; }
+    var standalone = false;
+    try { standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (e) {}
+    if (!standalone) { try { if (!localStorage.getItem('bk-v')) { localStorage.setItem('bk-v', '1'); track('site', 'visitor'); } } catch (e) {} }
+    try { if (!sessionStorage.getItem('bk-s')) { sessionStorage.setItem('bk-s', '1'); track('site', 'visit'); } } catch (e) {}
+  }
+  function siteVisitors(stats) { var s = stats && stats.site; return s ? (s.visitor || 0) : 0; }
+  function siteCounterHTML(stats) {
+    var n = siteVisitors(stats);
+    return n >= PUBLIC_MIN ? '<span class="livecount"><i aria-hidden="true"></i><b>' + plural(n) + '</b> kişi girdi</span>' : '';
   }
   function tried(app, stats) { var s = stats && stats[app.slug]; return s ? (s.first || 0) : 0; }
   function installs(app, stats) { var s = stats && stats[app.slug]; return s ? (s.installed || 0) : 0; }
@@ -366,18 +382,24 @@
     return '<div class="d-head"><h1>Bu test burada yok.</h1><p class="lead">Adres değişmiş ya da uygulama kaldırılmış olabilir. Canlı uygulamaların hepsi ana sayfada.</p><div class="d-actions"><a class="btn signal" href="/">Uygulamalara dön</a></div></div>';
   }
 
-  // Sayfadaki data-ev tıklamalarını say
+  // Siteye girişi say; paylaşım ve ZIP tıklamalarını say.
+  // "Aç" ve "İndir" ayrıca sayılmaz: uygulama açılınca ve indirme penceresi açılınca zaten sayılıyor.
   if (hasDOM) {
+    visit();
     document.addEventListener('click', function (e) {
       var t = e.target.closest && e.target.closest('[data-ev]');
-      if (t) track(t.getAttribute('data-a'), t.getAttribute('data-ev') + '-click');
+      if (!t) return;
+      var k = t.getAttribute('data-ev');
+      if (k === 'share' || k === 'source') track(t.getAttribute('data-a'), k + '-click');
     }, true);
+    window.addEventListener('appinstalled', function () { track('site', 'installed'); });
   }
 
   root.BK = {
     IG: IG, SITE: SITE, SAYAC: SAYAC, MIN_TRIED: MIN_TRIED, SEARCH_MIN: SEARCH_MIN, FALLBACK: FALLBACK,
     getApps: getApps, freshApps: freshApps, queryApps: queryApps, clean: clean, normalize: normalize, validSlug: validSlug,
     getStats: getStats, track: track, tried: tried, installs: installs,
+    PUBLIC_MIN: PUBLIC_MIN, visit: visit, siteVisitors: siteVisitors, siteCounterHTML: siteCounterHTML,
     imgSrc: imgSrc, absUrl: absUrl, statusKey: statusKey, testLabel: testLabel, numLabel: numLabel,
     isInternal: isInternal, canOpen: canOpen, isSoon: isSoon, installable: installable, esc: esc,
     detailUrl: detailUrl, shareUrl: shareUrl, openButton: openButton, installButton: installButton,
