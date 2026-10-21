@@ -80,7 +80,7 @@
 
   <p class="p-note" id="updated"></p>
   <p class="p-note">Bu sayfa sitede hiçbir yerde listelenmiyor, arama motorlarına kapalı. Bu sayfayı açtığın cihazda senin girişlerin artık sayılmıyor. Sayılar kişisel veri içermez, çerez yok.</p>
-  <p class="p-note">Siteye giren sayısı 10.000'i geçince ana sayfada "X kişi girdi" olarak kendiliğinden görünür (en geç 1 saat içinde).</p>
+  <p class="p-note">Siteye giren sayısı 10.000'i geçince ana sayfada "X kişi denedi" olarak kendiliğinden görünür (en geç 1 saat içinde).</p>
 
   <footer><span>Site sayımı 21 Ekim 2026'da, uygulama sayımı 17 Ekim 2026'da başladı.</span></footer>
 </div>
@@ -108,7 +108,7 @@
     $('visitors').textContent = fmt(v);
     $('bar').style.width = Math.min(100, v / GOAL * 100) + '%';
     $('goal').innerHTML = v >= GOAL
-      ? '<b>✓ Ana sayfada görünüyor.</b> Herkes "' + fmt(v) + ' kişi girdi" yazısını görüyor.'
+      ? '<b>✓ Ana sayfada görünüyor.</b> Herkes "' + fmt(v) + ' kişi denedi" yazısını görüyor.'
       : 'Ana sayfada görünmesine <b>' + fmt(GOAL - v) + '</b> kişi kaldı · %' + (v / GOAL * 100).toLocaleString('tr-TR', { maximumFractionDigits: 1 });
     $('t-installed').textContent = fmt(sum(stats, 'installed'));
     $('t-sheet').textContent = fmt(sum(stats, 'install-sheet'));
