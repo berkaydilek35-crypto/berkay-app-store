@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sayaç — Berkay Napıyor?</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#17191C">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<script>
+  // Bu cihaz Berkay'ın: buradan sonra bu cihazdaki girişler sayılmaz
+  try { localStorage.setItem('bk-me', '1'); } catch (e) {}
+</script>
+<style>
+  body{background:var(--ink);color:var(--paper)}
+  .top .ig{border-color:var(--signal);color:var(--paper)}
+  .mark{color:var(--paper)}
+  .p-hero{padding:18px 0 26px}
+  .p-label{font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#B9B5AA}
+  .p-big{font-weight:900;font-stretch:62%;font-size:clamp(96px,30vw,200px);line-height:.85;letter-spacing:-.01em;color:var(--signal);margin-top:8px;font-variant-numeric:tabular-nums}
+  .p-goal{margin-top:18px;max-width:560px}
+  .p-bar{height:14px;border-radius:999px;background:#2C2F35;overflow:hidden}
+  .p-bar i{display:block;height:100%;width:0;background:var(--signal);border-radius:999px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .p-goal p{margin-top:10px;font-size:16px;color:#DCD8CD}
+  .p-goal p b{color:var(--paper)}
+  .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 40px}
+  @media (min-width:760px){.p-grid{grid-template-columns:repeat(4,1fr)}}
+  .tile{background:#22252A;border-radius:18px;padding:16px 16px 14px}
+  .tile b{display:block;font-weight:900;font-stretch:72%;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+  .tile span{display:block;margin-top:6px;font-weight:750;font-size:15px}
+  .tile small{display:block;margin-top:2px;font-size:13px;color:#9C988E;line-height:1.35}
+  .tile.hl{background:var(--signal);color:var(--ink)}
+  .tile.hl small{color:rgba(23,25,28,.7)}
+  h2.p-h{font-weight:850;font-stretch:116%;font-size:30px;letter-spacing:-.02em;margin-bottom:14px}
+  .app{background:#22252A;border-radius:18px;padding:16px;margin-bottom:12px}
+  .app h3{font-weight:800;font-stretch:112%;font-size:21px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .app h3 small{font-weight:700;font-size:13px;color:#9C988E;font-stretch:100%}
+  .app dl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px;margin-top:12px}
+  @media (min-width:760px){.app dl{grid-template-columns:repeat(6,1fr)}}
+  .app dt{font-size:12.5px;color:#9C988E;font-weight:650}
+  .app dd{font-weight:900;font-stretch:72%;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .p-note{font-size:13.5px;color:#9C988E;margin-top:22px;max-width:60ch}
+  .p-note + .p-note{margin-top:8px}
+  .p-err{background:#3A2320;border-radius:14px;padding:12px 14px;margin-bottom:16px;font-weight:650}
+  .refresh{background:transparent;border:2px solid #3A3D44;color:var(--paper);font:inherit;font-weight:750;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+  footer{color:#6F6B62}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="/"><i></i>Berkay Napıyor?</a>
+    <button class="refresh" type="button" id="refresh">Yenile</button>
+  </header>
+
+  <div id="err" class="p-err" hidden></div>
+
+  <section class="p-hero" aria-labelledby="vl">
+    <p class="p-label" id="vl">Siteye giren (tekil kişi)</p>
+    <div class="p-big" id="visitors">—</div>
+    <div class="p-goal">
+      <div class="p-bar" aria-hidden="true"><i id="bar"></i></div>
+      <p id="goal">Yükleniyor…</p>
+    </div>
+  </section>
+
+  <div class="p-grid">
+    <div class="tile hl"><b id="t-installed">—</b><span>İndiren</span><small>Ana ekrana ekleyen kişi</small></div>
+    <div class="tile"><b id="t-sheet">—</b><span>İndir'e basan</span><small>İndirme penceresini açan</small></div>
+    <div class="tile"><b id="t-visit">—</b><span>Ziyaret</span><small>Tekrar gelenler dahil</small></div>
+    <div class="tile"><b id="t-zip">—</b><span>ZIP indiren</span><small>Kaynak kodunu indiren</small></div>
+  </div>
+
+  <h2 class="p-h">Uygulamalar</h2>
+  <div id="apps"></div>
+
+  <p class="p-note" id="updated"></p>
+  <p class="p-note">Bu sayfa sitede hiçbir yerde listelenmiyor, arama motorlarına kapalı. Bu sayfayı açtığın cihazda senin girişlerin artık sayılmıyor. Sayılar kişisel veri içermez, çerez yok.</p>
+  <p class="p-note">Siteye giren sayısı 10.000'i geçince ana sayfada "X kişi girdi" olarak kendiliğinden görünür (en geç 1 saat içinde).</p>
+
+  <footer><span>Site sayımı 21 Ekim 2026'da, uygulama sayımı 17 Ekim 2026'da başladı.</span></footer>
+</div>
+
+<script>
+(function () {
+  var SAYAC = 'https://bk-sayac.berkaydilekk.workers.dev';
+  var GOAL = 10000;
+  var $ = function (id) { return document.getElementById(id); };
+  function fmt(n) { return (n || 0).toLocaleString('tr-TR'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function sum(stats, key) { var t = 0; for (var a in stats) t += (stats[a][key] || 0); return t; }
+
+  // Uygulama adları ana sayfadaki gömülü listeden
+  var names = {};
+  fetch('/', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (h) {
+    var m = h.match(/<script id="bk-data" type="application\/json">([\s\S]*?)<\/script>/);
+    if (!m) return;
+    (JSON.parse(m[1]).apps || []).forEach(function (a) { names[a.slug] = a; });
+  }).catch(function () {}).then(load);
+
+  function render(stats) {
+    var site = stats.site || {};
+    var v = site.visitor || 0;
+    $('visitors').textContent = fmt(v);
+    $('bar').style.width = Math.min(100, v / GOAL * 100) + '%';
+    $('goal').innerHTML = v >= GOAL
+      ? '<b>✓ Ana sayfada görünüyor.</b> Herkes "' + fmt(v) + ' kişi girdi" yazısını görüyor.'
+      : 'Ana sayfada görünmesine <b>' + fmt(GOAL - v) + '</b> kişi kaldı · %' + (v / GOAL * 100).toLocaleString('tr-TR', { maximumFractionDigits: 1 });
+    $('t-installed').textContent = fmt(sum(stats, 'installed'));
+    $('t-sheet').textContent = fmt(sum(stats, 'install-sheet'));
+    $('t-visit').textContent = fmt(site.visit || 0);
+    $('t-zip').textContent = fmt(sum(stats, 'source-click'));
+
+    var slugs = Object.keys(stats).filter(function (a) { return a !== 'site'; });
+    Object.keys(names).forEach(function (s) { if (slugs.indexOf(s) < 0 && !/^yak/i.test(names[s].status || '')) slugs.push(s); });
+    slugs.sort(function (a, b) { return ((stats[b] || {}).first || 0) - ((stats[a] || {}).first || 0); });
+    $('apps').innerHTML = slugs.length ? slugs.map(function (s) {
+      var x = stats[s] || {}, n = names[s];
+      var row = [
+        ['Deneyen', x.first], ['Açılış', (x.open || 0) + (x['open-home'] || 0)], ['Ana ekrana ekleyen', x.installed],
+        ["İndir'e basan", x['install-sheet']], ['Detay sayfası', x.view], ['Paylaşım', x['share-click']]
+      ];
+      return '<article class="app"><h3>' + esc(n ? n.title : s) + (n && n.testNumber ? '<small>Saha Testi ' + String(n.testNumber).padStart(3, '0') + '</small>' : '') + '</h3><dl>' +
+        row.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + fmt(r[1]) + '</dd></div>'; }).join('') + '</dl></article>';
+    }).join('') : '<p class="p-note">Henüz kayıt yok.</p>';
+    $('updated').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + ' · Sayaç 5 dakikada bir tazelenir.';
+  }
+
+  function load() {
+    $('err').hidden = true;
+    fetch(SAYAC + '/stats', { mode: 'cors', cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(render)
+      .catch(function (e) { $('err').hidden = false; $('err').textContent = 'Sayaca ulaşılamadı (' + e.message + '). Biraz sonra Yenile\'ye bas.'; });
+  }
+  $('refresh').addEventListener('click', load);
+  setInterval(load, 120000);
+})();
+</script>
+</body>
+</html>
