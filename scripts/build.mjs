@@ -212,6 +212,7 @@ if (parts.showTools) grid = apps.filter(a => !B.isSoon(a)).map(a => B.cardHTML(a
 let index = indexTpl
   .replace('<!--bk:featured-->', f ? B.featuredHTML(f, stats) : '')
   .replace('<!--bk:grid-->', grid)
+  .replace('<!--bk:count-->', B.siteCounterHTML(stats))
   .replace('<span id="catName">Tüm uygulamalar</span>', `<span id="catName">${parts.live.length || parts.showTools ? 'Tüm uygulamalar' : 'Sıradakiler'}</span>`)
   .replace('<!--bk:data-->', dataTag());
 if (parts.showTools) index = index.replace('<div class="tools" id="tools" hidden>', '<div class="tools" id="tools">');
