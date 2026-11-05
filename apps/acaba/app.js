@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {mode:'offline', provider:'pollinations', key:'', model
 
 const SYS = `Sen "Acaba?" adlı mizah uygulamasının senaryo yazarısın. Kullanıcı aklına takılan bir "acaba"yı yazar (ör. "X bize ne yapacak?", "şunu yapsam ne olur?"). Sen bunun abartılı, absürt, komik "kötü sonunu" Türkçe yazarsın.
 Kurallar:
-- Ton: slapstick, sevimli felaket, Türk mizahı. Asla aşağılayıcı, nefret içeren, cinsel, gerçek şiddet ya da kendine zarar içeren içerik yazma. Kişileri değil durumu tiye al.
+- Ton: güncel Türk internet mizahı; zeki, kuru ve vurucu. Z kuşağı dili ve meme kalıpları serbest (POV, aura, NPC, delulu, red flag, "tecrübe oldu", -maxxing) ama her cümleye sıkıştırma, cringe olma. Hafif argo olur (yandın, battın, sıçtık gibi) ama ara sıra; küfür ve kimseye hakaret yok. Asla aşağılayıcı, nefret içeren, cinsel, gerçek şiddet ya da kendine zarar içeren içerik yazma. Kişileri değil durumu tiye al.
 - Kısa ve vurucu: her sahne en fazla 130 karakter, kehanet en fazla 110 karakter.
 - Gerçek kişi adı (oyuncu, hoca, ünlü) kullanma. Takım veya şirket adı metinde geçebilir.
 - "gorsel" alanı İNGİLİZCE görsel promptudur: tek sahne, karakterler ve eylem. Gerçek kişi, logo, arma, marka, yazı İÇERMEZ; takımları yalnızca forma renkleriyle anlat.
@@ -348,7 +348,7 @@ function frameMeter(ctx,d,lt,t){
   ctx.fillStyle='#fff'; ctx.fillRect(60,920,960,96); ctx.fillStyle=C.red; ctx.fillRect(60,920,960*val/100,96);
   ctx.lineWidth=7; ctx.strokeStyle='#000'; ctx.strokeRect(60,920,960,96);
   ctx.fillStyle='#000'; ctx.font=font(30,FB,'700');
-  ctx.textAlign='left'; ctx.fillText('Hafif', 60, 1066); ctx.textAlign='center'; ctx.fillText('Ortalık karışır', 540, 1066); ctx.textAlign='right'; ctx.fillText('Kıyamet', 1020, 1066);
+  ctx.textAlign='left'; ctx.fillText('Ucuz atlattın', 60, 1066); ctx.textAlign='center'; ctx.fillText('Ortalık karışır', 540, 1066); ctx.textAlign='right'; ctx.fillText('Yandın', 1020, 1066);
   const sp = clamp((lt-1.45)/0.32);
   if(sp>0){
     ctx.save(); ctx.translate(W/2, 1380); ctx.rotate(-0.08); const s=1.9-0.9*ease.out(sp); ctx.scale(s,s); ctx.globalAlpha=clamp(sp*2);
@@ -398,7 +398,7 @@ function frameEnd(ctx,d,lt,t){
     ctx.fillStyle='#000'; ctx.fillRect(-470+10,-90+10,940,180);
     ctx.fillStyle=C.yellow; ctx.fillRect(-470,-90,940,180); ctx.lineWidth=6; ctx.strokeStyle='#000'; ctx.strokeRect(-470,-90,940,180);
     ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font=font(44,FB,'800'); ctx.fillText('Senin derdin ne?', 0, -36);
+    ctx.font=font(44,FB,'800'); ctx.fillText('Senin acaban ne?', 0, -36);
     ctx.font=font(fit(ctx,trUpper(CONFIG.site),860,1,70,40,FH).px,FH); ctx.fillText(trUpper(CONFIG.site), 0, 36);
     ctx.restore();
   }
@@ -509,13 +509,13 @@ const state = { cat:'auto', data:null, imgs:[null,null,null], videoBlob:null, vi
 
 const EXAMPLES = [
   ['⚽','Yarın Barcelona\'yla maçımız var, bize ne yapacaklar?'],
-  ['🩴','Annemin en sevdiği vazoyu kırdım, ne yapacak?'],
-  ['📚','Ödevi yapmadım, hoca yarın ne yapar?'],
-  ['💼','Patronun sunum dosyasını yanlışlıkla sildim.'],
-  ['🏠','Ev sahibi akşam "konuşalım" dedi.'],
-  ['💔','Sevgilimin doğum gününü unuttum.']
+  ['🩴','Annemin en sevdiği vazoyu kırdım, acaba fark eder mi?'],
+  ['📚','Ödevi yapay zekâya yazdırdım, hoca anlar mı acaba?'],
+  ['💼','Toplantıda mikrofonum açık kalmış, acaba duydular mı?'],
+  ['🏠','Ev sahibi akşam "konuşalım" dedi, acaba ne diyecek?'],
+  ['💔','Sevgilime "ok" yazdım, acaba kızdı mı?']
 ];
-const LOAD_MSGS = ['Kader dosyan açılıyor…','Terlik yörüngesi hesaplanıyor…','Hakemle görüşülüyor…','Evren not alıyor…','Patronun takvimine bakılıyor…','Teyzeler bilgilendiriliyor…','Ev sahibi hesap makinesini çıkardı…'];
+const LOAD_MSGS = ['Kader dosyan açılıyor…','Terlik yörüngesi hesaplanıyor…','VAR kaydı inceleniyor…','Evren ekran görüntüsü alıyor…','Patronun takvimi taranıyor…','Teyzeler sesli mesaja başladı…','Ev sahibi hesap makinesini çıkardı…','47. senaryo yükleniyor…','Aura ölçülüyor…'];
 
 function showScreen(id){ ['home','loading','result'].forEach(s=>$('#'+s).hidden = s!==id); window.scrollTo({top:0}); }
 function renderChips(){
@@ -595,7 +595,7 @@ function download(blob,name){ const a=document.createElement('a'); const u=URL.c
 
 async function share(){
   const d=state.data; if(!d) return;
-  const text = `“${d.soru}”\n${d.kehanet}\nSen de sor: ${CONFIG.site}`;
+  const text = `“${d.soru}”\n${d.kehanet}\nSenin acaban ne? ${CONFIG.site}`;
   const files=[];
   if(state.videoBlob) files.push(new File([state.videoBlob], 'acaba.'+state.videoExt, {type:state.videoBlob.type}));
   else if(state.cardBlob) files.push(new File([state.cardBlob], 'acaba.png', {type:'image/png'}));

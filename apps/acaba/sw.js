@@ -1,5 +1,5 @@
 /* Acaba? — ana ekrandan internetsiz açılsın diye uygulama dosyalarını saklar. */
-const V = 'acaba-v3';
+const V = 'acaba-v4';
 const SHELL = ['./', './index.html', './app.js', './data.js', './icon.svg', './icon-192.png', './icon-512.png', './manifest.json', '/assets/bk-app.js'];
 
 self.addEventListener('install', (e) => {
