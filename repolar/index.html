@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Faydalı Repolar — Berkay Napıyor?</title>
+<meta name="description" content="GitHub'da bulup kendim denediğim, işe yarayan ücretsiz açık kaynak araçlar.">
+<meta name="theme-color" content="#F4F1E9">
+<link rel="canonical" href="https://berkay.instaassist.tr/repolar/">
+<meta property="og:site_name" content="Berkay Napıyor?">
+<meta property="og:title" content="Faydalı Repolar">
+<meta property="og:description" content="GitHub'da bulup kendim denediğim, işe yarayan ücretsiz araçlar.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://berkay.instaassist.tr/repolar/">
+<meta property="og:image" content="https://berkay.instaassist.tr/assets/og/home.jpg">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/repolar.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="/"><i></i>Berkay Napıyor?</a>
+    <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
+  </header>
+  <a class="back" href="/">← Uygulamalar</a>
+
+  <section class="rp-hero">
+    <p class="rp-kicker">Seri</p>
+    <h1>Faydalı Repolar</h1>
+    <p>GitHub'da bulup kendi bilgisayarımda denediğim, işe yarayan ücretsiz açık kaynak araçlar. Videoda gördüğün repo burada, indirme linkiyle.</p>
+  </section>
+
+  <div class="rp-list" id="list"></div>
+
+  <p class="rp-note">Repolar başkalarının emeği; ben bulup deniyorum. Kurmadan önce repo sayfasındaki gereksinimlere bak, sadece resmi indirme sayfasından indir.</p>
+
+  <footer>
+    <span>© 2026 Berkay Dilek · İzmir'de yapıldı, sahada test edildi.</span>
+    <span>Çerez yok. Tıklamalar isimsiz sayılır.</span>
+  </footer>
+</div>
+
+<script src="/assets/site.js"></script>
+<script>
+(function () {
+  // Yeni bölüm eklemek için bu listeye bir kayıt ekle (en yeni en üste)
+  var REPOS = [
+    {
+      no: 1,
+      id: 'digup',         // küçük harf, rakam ve tire; panelde bu adla görünür
+      name: 'DigUp',
+      repo: 'ARahim3/DigUp',
+      stars: 6300,
+      tagline: 'Bilgisayarındaki dosyaları içindekine göre bul.',
+      what: 'Fotoğrafı adıyla değil, tarif ederek bulursun: "deniz kenarında köpek" yazınca o fotoğraf çıkar. PDF\'lerin, belgelerin, ses kayıtlarının ve videoların içinde de arar; videoyu ve kaydı tam o ana açar.',
+      bullets: [
+        'Google DeepMind\'ın EmbeddingGemma 2 modeliyle çalışıyor, 100\'den fazla dil anlıyor',
+        'Her şey kendi bilgisayarında: dosyaların hiçbir yere gönderilmiyor, hesap yok',
+        'Ücretsiz ve açık kaynak (MIT)'
+      ],
+      needs: 'Mac için Apple Silicon (M serisi) ve macOS 14 ya da üstü. İlk açılışta yapay zekâ modelini bir kez indiriyor (865 MB).',
+      // İndirme dosyaları geliştiricinin resmi GitHub sürümlerinden iner
+      downloads: [
+        { os: 'mac', label: 'Mac için indir', file: 'DigUp-0.6.2.dmg', size: '8,9 MB', url: 'https://github.com/ARahim3/DigUp/releases/download/v0.6.2/DigUp-0.6.2.dmg' },
+        { os: 'win', label: 'Windows (beta)', file: 'DigUp_0.7.0-beta.3_x64-setup.exe', url: 'https://github.com/ARahim3/DigUp/releases/download/v0.7.0-beta.3/DigUp_0.7.0-beta.3_x64-setup.exe' },
+        { os: 'linux', label: 'Linux (beta)', file: 'DigUp_0.7.0-beta.3_amd64.AppImage', url: 'https://github.com/ARahim3/DigUp/releases/download/v0.7.0-beta.3/DigUp_0.7.0-beta.3_amd64.AppImage' }
+      ],
+      releases: 'https://github.com/ARahim3/DigUp/releases',
+      score: null, // Berkay puan verirse: { puan: 8, not: '...' }
+      video: 'https://www.instagram.com/reel/Dfcm6nAon7P/'
+    }
+  ];
+
+  var B = window.BK, el = document.getElementById('list');
+  function esc(s) { return B.esc(s); }
+  function k(n) { return n >= 1000 ? (n / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + 'k' : String(n); }
+  var ua = navigator.userAgent || '';
+  var mobile = /iPhone|iPad|iPod|Android/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua) && !/Chrome|Firefox/.test(ua) && screen.width < 1100);
+  var myOS = /Windows/i.test(ua) ? 'win' : (/Linux/i.test(ua) && !/Android/i.test(ua)) ? 'linux' : 'mac';
+
+  el.innerHTML = REPOS.map(function (r) {
+    var dl = r.downloads.slice().sort(function (a, b) { return (b.os === myOS) - (a.os === myOS); });
+    var main = dl[0], rest = dl.slice(1);
+    return '<article class="rp-card" id="' + String(r.no).padStart(2, '0') + '">' +
+      '<div class="rp-head"><span class="rp-no">#' + String(r.no).padStart(2, '0') + '</span>' +
+        '<span class="rp-stars" data-repo="' + esc(r.repo) + '">★ ' + k(r.stars) + '</span></div>' +
+      '<h2>' + esc(r.name) + '</h2>' +
+      '<p class="lead">' + esc(r.tagline) + '</p>' +
+      '<p>' + esc(r.what) + '</p>' +
+      '<ul class="rp-bul">' + r.bullets.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' +
+      '<p class="rp-needs"><b>Gerekenler:</b> ' + esc(r.needs) + '</p>' +
+      (r.score ? '<p class="rp-score"><b>Puanım: ' + r.score.puan + '/10.</b> ' + esc(r.score.not) + '</p>' : '') +
+      (mobile ? '<div class="rp-mobile"><b>Bu bir bilgisayar uygulaması.</b> Telefona kurulmuyor; linki kendine gönder, bilgisayarında aç.' +
+        '<button type="button" class="btn ghost small" data-share="' + r.no + '">Linki kendime gönder</button></div>' : '') +
+      '<div class="rp-dl">' +
+        '<a class="btn signal" href="' + esc(main.url) + '" rel="noopener" data-rp="' + r.id + '" data-t="download-' + main.os + '">' + esc(main.label) + '</a>' +
+        '<p class="rp-file">' + esc(main.file) + (main.size ? ' · ' + esc(main.size) : '') + '</p>' +
+        '<p class="rp-other">' + rest.map(function (d) {
+          return '<a href="' + esc(d.url) + '" rel="noopener" data-rp="' + r.id + '" data-t="download-' + d.os + '">' + esc(d.label) + '</a>';
+        }).join(' · ') + ' · <a href="' + esc(r.releases) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="releases">Tüm sürümler</a></p>' +
+      '</div>' +
+      '<div class="rp-actions">' +
+        (r.video ? '<a class="btn ghost" href="' + esc(r.video) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="video">Videoyu izle</a>' : '') +
+        '<a class="btn ghost" href="https://github.com/' + esc(r.repo) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="github">GitHub\'da gör</a>' +
+      '</div>' +
+      '<p class="rp-src">Dosyalar geliştiricinin resmi GitHub sürümlerinden iner; ben sadece doğru linki buraya koyuyorum.</p>' +
+    '</article>';
+  }).join('');
+
+  el.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-share]'); if (!b) return;
+    var url = location.origin + '/repolar/#' + String(b.getAttribute('data-share')).padStart(2, '0');
+    B.track('repolar', 'share');
+    if (navigator.share) { navigator.share({ title: 'DigUp · Faydalı Repolar', url: url }).catch(function () {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { b.textContent = 'Link kopyalandı ✓'; }); }
+  });
+
+  // İsimsiz sayaç: sayfa görüntüleme (oturumda bir kez) ve hangi repoda neye basıldığı.
+  // Kayıt adı repo-<id> (id sadece küçük harf ve tire); panel bunları "Faydalı Repolar" altında gösterir.
+  try { if (!sessionStorage.getItem('bk-rp')) { sessionStorage.setItem('bk-rp', '1'); B.track('repolar', 'view'); } } catch (e) {}
+  el.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-rp]');
+    if (a) B.track('repo-' + a.getAttribute('data-rp'), a.getAttribute('data-t'));
+  });
+
+  // Güncel yıldız sayısı (GitHub'dan; olmazsa yazılı sayı kalır)
+  document.querySelectorAll('.rp-stars[data-repo]').forEach(function (s) {
+    fetch('https://api.github.com/repos/' + s.getAttribute('data-repo'))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.stargazers_count) s.textContent = '★ ' + k(j.stargazers_count); })
+      .catch(function () {});
+  });
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(function () {});
+</script>
+</body>
+</html>

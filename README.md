@@ -18,6 +18,13 @@ berkay.instaassist.tr — Berkay Dilek'in (@berkay.builds) yapıp sahada test et
 3. Uygulama hemen `berkay.instaassist.tr/<slug>` adresinde açılır. Paylaşım görseli ve önizleme en geç 1 saat içinde
    (her saat başı yayın) ya da Actions → "Siteyi yayinla" → Run workflow ile hemen hazır olur.
 
+## Faydalı Repolar serisi
+
+`/repolar/` sayfası Instagram'daki Faydalı Repolar videolarının linklerini toplar. Yeni bölüm eklemek için
+`repolar/index.html` içindeki `REPOS` listesinin en üstüne bir kayıt ekle (`no`, `id`, `name`, `repo`, açıklamalar,
+`download` linki). Denedikten sonra `score: { puan: 8, not: '...' }`, video çıkınca `video: 'Reels linki'` doldur.
+Ana sayfadaki bandın "Son bölüm" yazısını da güncelle. Tıklamalar panelde "Faydalı Repolar" altında görünür.
+
 ## Nasıl çalışıyor
 
 - `scripts/build.mjs` her yayında CMS'i okur: ana sayfayı önceden çizer, her uygulamaya `/<slug>/index.html` üretir

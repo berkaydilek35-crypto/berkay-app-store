@@ -1,0 +1,42 @@
+/* Faydalı Repolar: ana sayfa bandı + /repolar/ sayfası (site.css'in üstüne) */
+/* Faydalı Repolar: ana sayfa bandı */
+.repo-band{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 16px;margin:64px 0 0;padding:22px 20px 22px 22px;border-radius:26px;background:var(--paper-2);border:2px solid var(--ink);text-decoration:none;transition:transform .12s ease}
+.repo-band:active{transform:scale(.985)}
+.repo-band .rb-k{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-weight:800;font-stretch:72%;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.repo-band .rb-k span{background:var(--signal);color:var(--ink);border-radius:6px;padding:4px 8px;letter-spacing:.04em}
+.repo-band b{display:block;font-weight:880;font-stretch:116%;font-size:clamp(32px,8vw,56px);line-height:.95;letter-spacing:-.03em}
+.repo-band small{display:block;margin-top:8px;font-size:16px;line-height:1.4;color:var(--ink-2);max-width:40ch}
+.repo-band .rb-go{width:58px;height:58px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:26px;font-weight:800}
+.repo-band + .about{margin-top:40px}
+/* Faydalı Repolar sayfası */
+.rp-hero{display:grid;gap:12px;margin-bottom:34px}
+.rp-kicker{font-weight:800;font-stretch:72%;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.rp-hero h1{font-weight:880;font-stretch:116%;font-size:clamp(46px,12vw,104px);line-height:.92;letter-spacing:-.035em}
+.rp-hero p:last-child{font-size:clamp(18px,4.6vw,22px);max-width:40ch;color:var(--ink-2)}
+.rp-list{display:grid;gap:20px}
+.rp-card{display:grid;gap:14px;padding:22px 20px 22px;border:2px solid var(--ink);border-radius:24px;background:#fff;max-width:760px;scroll-margin-top:16px}
+.rp-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rp-no{font-weight:900;font-stretch:62%;font-size:56px;line-height:.8;color:var(--signal);letter-spacing:-.01em}
+.rp-stars{font-weight:750;font-size:14px;padding:6px 11px;border-radius:999px;background:var(--ink);color:var(--paper);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp-card h2{font-weight:880;font-stretch:116%;font-size:clamp(36px,9vw,58px);line-height:.95;letter-spacing:-.03em}
+.rp-card .lead{font-size:20px;font-weight:650;line-height:1.3;color:var(--ink)}
+.rp-card p{color:var(--ink-2)}
+.rp-bul{list-style:none;display:grid;gap:8px}
+.rp-bul li{position:relative;padding-left:22px;color:var(--ink-2)}
+.rp-bul li::before{content:"";position:absolute;left:2px;top:.62em;width:9px;height:9px;border-radius:50%;background:var(--signal)}
+.rp-needs{background:var(--paper);border-radius:14px;padding:12px 14px;font-size:15.5px}
+.rp-needs b,.rp-score b{color:var(--ink)}
+.rp-score{border-left:4px solid var(--signal);padding-left:12px}
+.rp-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+@media (max-width:639px){.rp-actions .btn{flex:1 1 100%}}
+.rp-dl{display:grid;gap:6px;justify-items:start;margin-top:4px}
+.rp-dl .btn{min-width:240px;justify-content:center}
+@media (max-width:639px){.rp-dl{justify-items:stretch}.rp-dl .btn{min-width:0}}
+.rp-file{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rp-other{font-size:15px;color:var(--muted)}
+.rp-other a{color:var(--ink);font-weight:650;text-underline-offset:3px}
+.rp-mobile{display:grid;gap:10px;background:var(--ink);color:var(--paper);border-radius:16px;padding:14px 16px;font-size:15.5px;line-height:1.45}
+.rp-mobile b{color:var(--paper)}
+.rp-mobile .btn{justify-self:start;color:var(--paper);border-color:var(--paper)}
+.rp-src{font-size:13.5px;color:var(--muted)}
+.rp-note{margin:28px 0 10px;max-width:60ch;font-size:14.5px;color:var(--muted)}

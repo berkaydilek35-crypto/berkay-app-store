@@ -78,6 +78,9 @@
   <h2 class="p-h">Uygulamalar</h2>
   <div id="apps"></div>
 
+  <h2 class="p-h" style="margin-top:34px">Faydalı Repolar</h2>
+  <div id="repos"></div>
+
   <p class="p-note" id="updated"></p>
   <p class="p-note">Bu sayfa sitede hiçbir yerde listelenmiyor, arama motorlarına kapalı. Bu sayfayı açtığın cihazda senin girişlerin artık sayılmıyor. Sayılar kişisel veri içermez, çerez yok.</p>
   <p class="p-note">Siteye giren sayısı 10.000'i geçince ana sayfada "X kişi denedi" olarak kendiliğinden görünür (en geç 1 saat içinde).</p>
@@ -115,7 +118,8 @@
     $('t-visit').textContent = fmt(site.visit || 0);
     $('t-zip').textContent = fmt(sum(stats, 'source-click'));
 
-    var slugs = Object.keys(stats).filter(function (a) { return a !== 'site'; });
+    function isRepo(a) { return a === 'repolar' || a.indexOf('repo-') === 0; }
+    var slugs = Object.keys(stats).filter(function (a) { return a !== 'site' && !isRepo(a); });
     Object.keys(names).forEach(function (s) { if (slugs.indexOf(s) < 0 && !/^yak/i.test(names[s].status || '')) slugs.push(s); });
     slugs.sort(function (a, b) { return ((stats[b] || {}).first || 0) - ((stats[a] || {}).first || 0); });
     $('apps').innerHTML = slugs.length ? slugs.map(function (s) {
@@ -127,6 +131,14 @@
       return '<article class="app"><h3>' + esc(n ? n.title : s) + (n && n.testNumber ? '<small>Saha Testi ' + String(n.testNumber).padStart(3, '0') + '</small>' : '') + '</h3><dl>' +
         row.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + fmt(r[1]) + '</dd></div>'; }).join('') + '</dl></article>';
     }).join('') : '<p class="p-note">Henüz kayıt yok.</p>';
+    var rp = stats.repolar || {}, repos = Object.keys(stats).filter(function (a) { return a.indexOf('repo-') === 0; });
+    $('repos').innerHTML = '<article class="app"><h3>Sayfa<small>/repolar/</small></h3><dl><div><dt>Ziyaret</dt><dd>' + fmt(rp.view) + '</dd></div><div><dt>Linki kendine gönderen</dt><dd>' + fmt(rp.share) + '</dd></div></dl></article>' +
+      repos.map(function (s) {
+        var x = stats[s];
+        return '<article class="app"><h3>' + esc(s.slice(5)) + '</h3><dl>' +
+          [['Mac indirme', x['download-mac']], ['Windows', x['download-win']], ['Linux', x['download-linux']], ['GitHub', x.github], ['Video', x.video], ['Tüm sürümler', x.releases]].map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + fmt(r[1]) + '</dd></div>'; }).join('') +
+          '</dl></article>';
+      }).join('');
     $('updated').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) + ' · Sayaç 5 dakikada bir tazelenir.';
   }
 
