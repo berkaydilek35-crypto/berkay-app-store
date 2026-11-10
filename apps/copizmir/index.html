@@ -1,0 +1,1506 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Çöpİzmir</title>
+<meta name="description" content="İzmir'in resmi olmayan çöp istatistik kurumu. Sokaktaki çöpün fotoğrafını çek, konumunu paylaş; yüzdesini bilirkişi söylesin.">
+<meta property="og:title" content="Çöpİzmir">
+<meta property="og:description" content="Sokaktaki çöpü fotoğrafla, konumunu paylaş, İzmir'in çöp haritasına ekle. Anonim ve ücretsiz.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://berkay.instaassist.tr/copizmir">
+<meta property="og:image" content="https://berkay.instaassist.tr/assets/og/copizmir.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#E8560B">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Çöpİzmir">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>window.COPIZMIR_API = "https://copizmir.pages.dev";</script>
+<script src="/assets/bk-app.js" data-app="copizmir" data-name="Çöpİzmir" data-sw="sw.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+/* Layout: map-first civic parody — sticky header, full-bleed trash map with index card + FAB, hazard-tape ticker, then index/scale, league and the tutanak list */
+:root{
+  --bg:#EDF0EA; --surface:#FFFFFF; --surface-2:#E2E7DF; --ink:#151917; --muted:#57605A; --line:#CBD3C9;
+  --vest:#E8560B; --vest-ink:#FFFFFF; --ok:#2A694B; --land:#E4E9E1; --info:#1F5F86;
+  --h0:#2A694B; --h1:#62862A; --h2:#B98F00; --h3:#DB730E; --h4:#CF4512; --h5:#B21F2A;
+  --tape:#F3C300; --tape-ink:#141414; --scrim:rgba(14,18,16,.55);
+  --f-display:"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111413; --surface:#1A1E1C; --surface-2:#222724; --ink:#E9ECE7; --muted:#96A099; --line:#2E3531;
+    --vest:#FF7A2F; --vest-ink:#1A0D04; --ok:#58AB84; --land:#1D2220; --info:#6FB3DA;
+    --h0:#58AB84; --h1:#9BBB4C; --h2:#E9BD1C; --h3:#FF9B3E; --h4:#FF6D3B; --h5:#FF5D63;
+    --tape:#E9BB12; --tape-ink:#121212; --scrim:rgba(0,0,0,.65);
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--vest);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.s0{--sc:var(--h0)} .s1{--sc:var(--h1)} .s2{--sc:var(--h2)} .s3{--sc:var(--h3)} .s4{--sc:var(--h4)} .s5{--sc:var(--h5)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top-in{display:flex;align-items:center;gap:16px;padding-block:10px}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink)}
+.logo{width:30px;height:30px;flex:none}
+.logo .b{fill:var(--vest)} .logo .l{fill:var(--ink)} .logo .p{fill:var(--vest-ink)} .logo .ps{stroke:var(--vest-ink)}
+.wm{font-family:var(--f-display);font-weight:900;font-size:28px;letter-spacing:.02em;line-height:1}
+.wm b{color:var(--vest);font-weight:900}
+.tag{color:var(--muted);font-size:13px;flex:1;min-width:0}
+.btn-primary{background:var(--vest);color:var(--vest-ink);border:0;border-radius:4px;padding:10px 18px;font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase;line-height:1.1;white-space:nowrap}
+.btn-primary:hover:not(:disabled){filter:brightness(1.06)}
+.btn-primary:disabled{opacity:.45}
+.btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:9px 14px;font-weight:600;font-size:14px;line-height:1.2}
+.btn-ghost:hover:not(:disabled){border-color:var(--muted)}
+.btn-ghost:disabled{opacity:.5}
+@media (max-width:640px){.tag{display:none}.top-in{justify-content:space-between}.wm{font-size:25px}#btnReportTop{display:none}}
+
+/* map */
+.mapwrap{position:relative;height:clamp(440px,74svh,860px);border-bottom:1px solid var(--line);background:var(--land)}
+#map{position:absolute;inset:0}
+.idx-card{position:absolute;z-index:3;left:max(12px,env(safe-area-inset-left,0px));top:12px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:10px 14px 12px;box-shadow:0 4px 18px rgba(0,0,0,.12);max-width:min(300px,calc(100% - 80px))}
+.idx-card .eyebrow{font-size:10.5px;display:flex;align-items:center;gap:7px}
+.idx-card .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--h5);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.idx-num{font-family:var(--f-display);font-weight:900;font-size:58px;line-height:.86;margin-top:6px;font-variant-numeric:tabular-nums}
+.idx-num .pc{color:var(--vest);font-size:.5em;vertical-align:.55em;margin-right:2px}
+.idx-num sup{font-size:.36em;color:var(--muted)}
+.idx-line{font-size:13px;margin-top:6px;line-height:1.35}
+.idx-stage{display:inline-block;margin-top:7px;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.05em;text-transform:uppercase;color:var(--sc);border:2px solid var(--sc);padding:1px 7px 0}
+.map-legend{position:absolute;z-index:3;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 10px;display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);max-width:calc(100% - 140px)}
+.map-legend span{display:inline-flex;align-items:center;gap:5px}
+.map-legend i{width:10px;height:10px;border-radius:50%;background:var(--sc);display:inline-block}
+.map-legend .mir i{background:var(--ok);opacity:.55}
+.map-empty{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-40%);width:min(420px,calc(100% - 32px));background:var(--surface);border:2px dashed var(--line);border-radius:6px;padding:22px 20px;display:grid;gap:10px;justify-items:start;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.map-empty h2{font-family:var(--f-display);font-weight:800;font-size:28px;text-transform:uppercase;line-height:1}
+.map-empty p{color:var(--muted);font-size:14px}
+.map-err{position:absolute;z-index:4;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:4px;padding:9px 12px;font-size:13px;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
+.map-err button{background:var(--bg);color:var(--ink);border:0;border-radius:3px;padding:4px 9px;font-weight:600;font-size:12px}
+.fab{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 6px 20px rgba(232,86,11,.35);font-size:21px;padding:13px 26px;display:none}
+@media (max-width:640px){.fab{display:block}.map-legend{bottom:76px}}
+.maplibregl-ctrl-group{border-radius:4px!important}
+.maplibregl-ctrl-attrib{font-size:10px}
+
+/* hazard tape ticker */
+.tape{background:var(--tape);color:var(--tape-ink);position:relative;overflow:hidden}
+.tape::before,.tape::after{content:"";position:absolute;left:0;right:0;height:5px;background:repeating-linear-gradient(-45deg,var(--tape-ink) 0 8px,var(--tape) 8px 16px)}
+.tape::before{top:0}.tape::after{bottom:0}
+.tape-in{display:flex;align-items:center;gap:14px;padding-block:11px}
+.tape-label{font-family:var(--f-display);font-weight:900;font-size:16px;letter-spacing:.08em;flex:none;background:var(--tape-ink);color:var(--tape);padding:2px 8px}
+.ticker{overflow:hidden;flex:1;min-width:0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.ticker-track{display:inline-flex;white-space:nowrap;font-family:var(--f-mono);font-size:13px;font-weight:600;letter-spacing:.04em;animation:tick var(--dur,40s) linear infinite}
+.ticker-track span{padding-right:28px}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* index + scale */
+.hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:40px;padding-block:34px 30px;align-items:start}
+@media (max-width:880px){.hero{grid-template-columns:1fr;gap:26px}}
+.hero h2{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,4vw,40px);letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.hero-line{font-size:clamp(18px,2.2vw,22px);line-height:1.3;max-width:34ch;margin-top:12px;font-weight:500}
+.hero-note{font-size:13px;color:var(--muted);margin-top:8px;max-width:56ch}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:24px 0 0;border-top:1px solid var(--line)}
+.stats div{padding:12px 14px 0 0;min-width:0}
+.stats div+div{padding-left:14px;border-left:1px solid var(--line)}
+.stats dt{font-size:12px;color:var(--muted);line-height:1.3}
+.stats dd{margin:4px 0 0;font-family:var(--f-display);font-weight:800;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats div:nth-child(3){padding-left:0;border-left:0}.stats div:nth-child(n+3){border-top:1px solid var(--line);margin-top:12px}}
+.scale-box h3{font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:.03em;text-transform:uppercase}
+.scale-box>p{font-size:13px;color:var(--muted);margin:2px 0 12px}
+.scale{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.scale li{display:grid;grid-template-columns:14px 62px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 12px;border-radius:3px;color:var(--muted)}
+.scale .sw{width:14px;height:14px;border-radius:2px;background:var(--sc);align-self:start;margin-top:4px}
+.scale .rng{align-self:start;margin-top:2px}
+.scale .nm{min-width:0;font-weight:600;color:var(--ink)}
+.scale .nm small{display:block;font-weight:400;font-size:13px;color:var(--muted);line-height:1.35;margin-top:1px}
+.scale .rng{font-size:12px}
+.scale .now{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--sc);visibility:hidden}
+.scale li.on{background:var(--surface);color:var(--ink);font-weight:600;outline:1px solid var(--line)}
+.scale li.on .now{visibility:visible}
+
+/* league */
+.board{padding-block:6px 34px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px;min-width:0}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.panel-h h2{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:.03em;text-transform:uppercase}
+.panel-h p{font-size:13px;color:var(--muted)}
+.league{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));column-gap:28px}
+.lg-row{display:grid;grid-template-columns:26px minmax(0,1fr) 64px 50px;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 4px;border-radius:0}
+.lg-row:hover,.lg-row.sel{background:var(--surface-2)}
+.lg-rk{font-size:13px;color:var(--muted)}
+.lg-nm{font-weight:600;min-width:0}
+.lg-nm small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.lg-tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;padding:0 5px;margin-left:6px;color:var(--sc);vertical-align:2px;white-space:nowrap}
+.lg-bar{height:8px;background:var(--surface-2);border-radius:1px;overflow:hidden}
+.lg-bar i{display:block;height:100%;background:var(--sc)}
+.lg-pc{font-family:var(--f-display);font-weight:800;font-size:22px;text-align:right;font-variant-numeric:tabular-nums}
+.lg-empty{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.55}
+.lg-zero{padding:18px 4px;color:var(--muted);font-size:14px}
+
+/* feed */
+.feed-sec{padding-block:4px 40px}
+.feed-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.feed-head h2{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,4vw,40px);letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.feed-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip-filter{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);border:0;border-radius:3px;padding:6px 10px;font-weight:600;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--surface);max-width:100%;overflow-x:auto}
+.seg button{background:none;border:0;padding:7px 12px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:18px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;min-width:0;text-align:left;padding:0;width:100%}
+.card-top{display:flex;justify-content:space-between;gap:8px;padding:9px 12px;font-size:11px;letter-spacing:.06em;color:var(--muted);border-bottom:1px dashed var(--line)}
+.photo{position:relative;display:block;width:100%;aspect-ratio:4/3;max-width:100%;background:var(--surface-2);overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.is-mir .photo img{filter:saturate(.35)}
+.stamp{position:absolute;right:12px;top:12px;transform:rotate(-8deg);font-family:var(--f-display);font-weight:900;font-size:36px;line-height:.85;color:var(--sc);border:3px solid var(--sc);outline:1px solid var(--sc);outline-offset:3px;padding:7px 10px 4px;background:var(--surface);background:color-mix(in srgb,var(--surface) 82%,transparent);text-align:center;font-variant-numeric:tabular-nums}
+.stamp small{display:block;font-size:13px;letter-spacing:.24em;margin-top:2px}
+.stamp-ok{--sc:var(--ok);right:auto;top:auto;left:12px;bottom:14px;transform:rotate(5deg);font-size:24px}
+.stamp-ok small{letter-spacing:.08em;font-size:11px}
+.badges{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.badge{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:2px 6px;border-radius:2px}
+.badge.v{background:var(--info);color:#fff;border-color:var(--info)}
+.card-body{padding:13px 14px 12px;display:grid;gap:6px}
+.card-title{display:block;font-family:var(--f-display);font-weight:800;font-size:24px;line-height:1.02;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.loc{font-weight:600;font-size:14px}
+.card-foot{margin-top:auto;padding:9px 14px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.card-foot strong{color:var(--ink);font-family:var(--f-display);font-weight:800;font-size:18px}
+.more{margin-top:18px}
+.empty{grid-column:1/-1;border:2px dashed var(--line);border-radius:4px;padding:30px 22px;display:grid;gap:10px;justify-items:start;max-width:640px}
+.empty h3{font-family:var(--f-display);font-weight:800;font-size:28px;text-transform:uppercase;line-height:1}
+.empty p{color:var(--muted);max-width:52ch}
+
+footer{border-top:1px solid var(--line);padding-block:24px 34px;color:var(--muted);font-size:13px}
+.foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.foot-in p{max-width:72ch}
+
+/* dialogs */
+.dlg-wrap{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dlg{background:var(--surface);color:var(--ink);width:100%;max-width:600px;max-height:100%;overflow:auto;border-radius:6px;border:1px solid var(--line);padding:20px;display:grid;grid-auto-rows:max-content;gap:18px;overscroll-behavior:contain}
+@media (max-width:640px){.dlg-wrap{align-items:flex-end;padding:0;padding-top:max(12px,env(safe-area-inset-top,0px))}.dlg{border-radius:12px 12px 0 0;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));max-height:94%}}
+.dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.dlg-head h2{font-family:var(--f-display);font-weight:900;font-size:32px;text-transform:uppercase;line-height:1;margin-top:2px}
+.x{background:var(--surface);border:1px solid var(--line);border-radius:4px;width:38px;height:38px;font-size:22px;line-height:1;flex:none}
+.step{display:grid;gap:12px;padding-top:16px;border-top:1px solid var(--line)}
+.step-h{display:flex;align-items:baseline;gap:10px}
+.step-h b{font-family:var(--f-mono);font-size:12px;color:var(--vest);letter-spacing:.08em}
+.step-h h3{font-family:var(--f-display);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>.btn-primary,.row>.btn-ghost{flex:1;min-width:150px}
+.file-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.pv-box{position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--bg)}
+#pv{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.pv-box.scanning::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--vest);box-shadow:0 0 14px 2px var(--vest);animation:scan 1.5s ease-in-out infinite alternate}
+@keyframes scan{from{top:0}to{top:calc(100% - 3px)}}
+.note{font-size:13px;color:var(--muted)}
+.note b{color:var(--ink)}
+.status{font-size:13px;font-family:var(--f-mono);color:var(--ink)}
+.status.err{color:var(--h5)}
+.status.ok{color:var(--ok)}
+#pickMap{height:240px;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2 .span2{grid-column:1/-1}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+.fld{display:grid;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
+.fld .opt{font-weight:400}
+.fld input,.fld select{width:100%;font:inherit;font-size:16px;font-weight:500;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:0}
+.fld input:focus,.fld select:focus{outline:2px solid var(--vest);outline-offset:0;border-color:transparent}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4}
+.check input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--vest);flex:none}
+.res{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start;border:1px solid var(--line);border-radius:4px;padding:16px;background:var(--bg)}
+.res .stamp{position:static;transform:rotate(-6deg);margin:6px 4px 0}
+.res-stage{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--sc)}
+.res h4{font-family:var(--f-display);font-weight:800;font-size:24px;line-height:1.02;text-transform:uppercase;margin:4px 0 6px}
+.res p{font-size:14px}
+@media (max-width:420px){.res{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:8px 0 0;padding:0}
+.chips li{font-family:var(--f-mono);font-size:11px;background:var(--surface-2);padding:3px 7px;border-radius:2px;color:var(--ink)}
+.slider{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.slider label{font-size:13px;font-weight:600;color:var(--muted);grid-column:1/-1}
+.slider input{width:100%;accent-color:var(--vest)}
+.slider output{font-family:var(--f-display);font-weight:800;font-size:24px;min-width:3ch;text-align:right;font-variant-numeric:tabular-nums}
+.warn{font-size:13px;border-left:3px solid var(--h4);padding:8px 12px;background:var(--bg)}
+
+/* detail */
+.dt-photo{position:relative;margin:-20px -20px 0;width:calc(100% + 40px);max-width:none;aspect-ratio:4/3;background:var(--surface-2);overflow:hidden;border-radius:6px 6px 0 0}
+.dt-photo #dtZoom{all:unset;display:block;width:100%;height:100%;cursor:zoom-in}
+.dt-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.dt-photo .x{position:absolute;right:12px;top:12px;z-index:2;background:rgba(0,0,0,.55);color:#fff;border-color:rgba(255,255,255,.35)}
+@media (max-width:640px){.dt-photo{border-radius:12px 12px 0 0}}
+.dt-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.dt h2{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase}
+.dt .addr{font-weight:600;font-size:15px;margin-top:6px}
+.yorum{margin:0;font-size:14.5px;line-height:1.5;padding-left:10px;border-left:2px solid var(--line)}
+.yorum span{font-weight:600;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:4px}
+.facts div{padding:10px 12px;min-width:0}
+.facts div+div{border-left:1px solid var(--line)}
+.facts dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:3px 0 0;font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.05}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.acts button,.acts a{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 12px;font-size:14px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.acts button:hover:not(:disabled),.acts a:hover{border-color:var(--ink)}
+.acts button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.acts button:disabled{opacity:.55}
+.complaint{display:grid;gap:10px;border:1px solid var(--line);border-radius:4px;padding:14px;background:var(--bg)}
+.complaint textarea{width:100%;min-height:120px;font:13px/1.5 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:10px;resize:vertical}
+.linkish{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font-size:13px;justify-self:start}
+
+.lightbox{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.lightbox img{max-width:100%;max-height:84vh;object-fit:contain;border-radius:2px}
+.lightbox p{color:#d9ddd8;font-size:12px;margin-top:10px;text-align:center}
+.lightbox .x{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));color:#fff;background:transparent;border-color:rgba(255,255,255,.4)}
+.install{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.install svg{width:16px;height:16px;flex:none}
+.install .sm{display:none}
+@media (max-width:640px){.install .lg{display:none}.install .sm{display:inline}}
+.ih-steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:ih}
+.ih-steps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;font-size:15px;line-height:1.45}
+.ih-steps li::before{counter-increment:ih;content:counter(ih);width:34px;height:34px;border-radius:50%;background:var(--vest);color:var(--vest-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:19px}
+.ih-steps b{font-weight:700}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:4px;font-size:14px;font-weight:500;max-width:min(520px,calc(100% - 32px));box-shadow:0 6px 24px rgba(0,0,0,.25)}
+
+@media (prefers-reduced-motion: reduce){
+  .ticker-track{animation:none}.ticker{overflow-x:auto}
+  .idx-card .eyebrow i{animation:none}
+  .pv-box.scanning::after{animation:none;top:50%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="./" aria-label="Çöpİzmir ana sayfa">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect class="b" x="7" y="9.5" width="18" height="19" rx="2"/><rect class="l" x="4.5" y="6" width="23" height="3.5" rx="1.2"/><rect class="l" x="12.5" y="3" width="7" height="3.5" rx="1"/><circle class="p" cx="12.6" cy="15.2" r="2"/><circle class="p" cx="19.4" cy="22.6" r="2"/><path class="ps" d="M19.8 13.4 12.2 24.4" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <span class="wm"><b>ÇÖP</b>İZMİR</span>
+    </a>
+    <p class="tag">İzmir'in resmi olmayan çöp istatistik kurumu</p>
+    <button class="btn-ghost install" id="btnInstall" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span class="lg">Uygulamayı yükle</span><span class="sm">Yükle</span></button>
+    <button class="btn-primary" id="btnReportTop" type="button" data-open-report>Çöp bildir</button>
+  </div>
+</header>
+
+<main>
+  <section class="mapwrap" aria-label="Çöp haritası">
+    <div id="map"></div>
+    <div class="idx-card" id="idxCard">
+      <p class="eyebrow"><i aria-hidden="true"></i>İzmir Çöp Endeksi · canlı</p>
+      <div class="idx-num" aria-live="polite"><span class="pc">%</span><span id="idxNum">–</span><sup id="idxStar" hidden>*</sup></div>
+      <p class="idx-line" id="idxLine">Tutanaklar getiriliyor…</p>
+      <span class="idx-stage s0" id="idxStage" hidden></span>
+    </div>
+    <div class="map-legend" aria-hidden="true">
+      <span class="s0"><i></i>%0–29</span><span class="s2"><i></i>%30–49</span><span class="s3"><i></i>%50–69</span><span class="s4"><i></i>%70–89</span><span class="s5"><i></i>%90+</span><span class="mir"><i></i>Temizlendi</span>
+    </div>
+    <div class="map-empty" id="mapEmpty" hidden>
+      <h2>Haritada henüz çöp yok</h2>
+      <p>Resmi kayıtlara göre İzmir tertemiz; çünkü henüz kimse bakmadı. Sokakta gördüğün çöpün fotoğrafını çek, konumunu paylaş, ilk tutanağı sen tut.</p>
+      <button type="button" class="btn-primary" data-open-report>Çöp bildir</button>
+    </div>
+    <div class="map-err" id="mapErr" hidden><span id="mapErrText">Sunucuya ulaşılamadı.</span><button type="button" id="btnRetry">Tekrar dene</button></div>
+    <button type="button" class="btn-primary fab" data-open-report>Çöp bildir</button>
+  </section>
+
+  <div class="tape" aria-label="Çöp borsası">
+    <div class="wrap tape-in">
+      <span class="tape-label">ÇÖP BORSASI</span>
+      <div class="ticker"><div class="ticker-track" id="ticker"><span>TUTANAKLAR GETİRİLİYOR</span><span>TUTANAKLAR GETİRİLİYOR</span></div></div>
+    </div>
+  </div>
+
+  <section class="wrap hero" aria-labelledby="heroH">
+    <div>
+      <h2 id="heroH">Bugünkü durum</h2>
+      <p class="hero-line" id="heroLine">Endeks hesaplanıyor.</p>
+      <p class="hero-note" id="heroNote">Endeks, açık tutanaklardaki çöp yüzdelerinin ortalamasıdır. Her tutanağın yüzdesi bilirkişinin ilk puanı ile halk jürisinin oylarından oluşur. Bilimsel değildir; sokak da değil.</p>
+      <dl class="stats">
+        <div><dt>Açık tutanak</dt><dd id="stOpen">0</dd></div>
+        <div><dt>Ort. çöp yaşı</dt><dd id="stAge">—</dd></div>
+        <div><dt title="Temizlendiği iki kişi tarafından bildirilen çöpler">Mucize</dt><dd id="stMir">0</dd></div>
+        <div><dt title="Ben de gördüm diyenler">Tanık</dt><dd id="stTan">0</dd></div>
+      </dl>
+    </div>
+    <div class="scale-box">
+      <h3>Çöp Ölçeği</h3>
+      <p>Richter usulü. Deprem değil ama sarsıcı.</p>
+      <ol class="scale" id="scale"></ol>
+    </div>
+  </section>
+
+  <section class="wrap board">
+    <div class="panel">
+      <div class="panel-h"><h2>Çöp Ligi</h2><p>Açık tutanakların ilçe ortalaması · zirve en çöplü ilçenin</p></div>
+      <ol class="league" id="league"></ol>
+      <p class="lg-empty" id="leagueRest"></p>
+    </div>
+  </section>
+
+  <section class="wrap feed-sec" id="feedSec" aria-labelledby="feedH">
+    <div class="feed-head">
+      <h2 id="feedH">Tutanaklar</h2>
+      <div class="feed-tools">
+        <button class="chip-filter" id="filterChip" type="button" hidden></button>
+        <div class="seg" id="sortSeg" role="group" aria-label="Sırala">
+          <button type="button" data-sort="yeni" aria-pressed="true">En yeni</button>
+          <button type="button" data-sort="copl" aria-pressed="false">En çöplü</button>
+          <button type="button" data-sort="yasli" aria-pressed="false">En yaşlı çöp</button>
+          <button type="button" data-sort="mucize" aria-pressed="false">Mucizeler</button>
+        </div>
+      </div>
+    </div>
+    <div class="feed" id="feed"><div class="empty"><h3>Tutanaklar getiriliyor</h3><p>Sokaklardan gelen çöp fotoğrafları burada listelenecek.</p></div></div>
+    <button type="button" class="btn-ghost more" id="btnMore" hidden>Daha fazla göster</button>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <p>Çöpİzmir anonim bir mizah ve farkındalık projesidir; hesap açılmaz, kimlik ya da IP adresi saklanmaz. Kötüye kullanımı sınırlamak için tarayıcın rastgele bir cihaz anahtarı üretir; kimliğine bağlı değildir; yalnızca aşırı kullanımı ve aynı tutanağa iki kez oy verilmesini önlemek için tek yönlü özet olarak kullanılır. Fotoğraflardaki yüzler ve plakalar yayınlanmadan önce telefonunda sansürlenir; sansürsüz hali cihazından çıkmaz, fotoğrafın konum ve cihaz bilgileri de silinir. Çöp yüzdeleri yapay zekâ, göz kararı ve halk jürisiyle verilir; resmi ölçüm değildir. Harita ve adres verileri © OpenStreetMap katkıcıları.</p>
+    <p class="mono">bir Berkay Napıyor? uygulaması</p>
+  </div>
+</footer>
+
+<!-- tutanak detayı -->
+<div class="dlg-wrap" id="detail" hidden>
+  <div class="dlg dt" role="dialog" aria-modal="true" aria-labelledby="dtTitle" id="detailBody"></div>
+</div>
+
+<!-- çöp bildir -->
+<div class="dlg-wrap" id="sheet" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="dlg-head">
+      <div><p class="eyebrow">Yeni tutanak · anonim</p><h2 id="sheetTitle">Çöp bildir</h2></div>
+      <button class="x" id="sheetClose" type="button" aria-label="Kapat">×</button>
+    </div>
+
+    <section class="step" aria-labelledby="s1h">
+      <div class="step-h"><b>01</b><h3 id="s1h">Fotoğraf</h3></div>
+      <div class="row">
+        <label class="btn-primary file-btn" for="fCam">Fotoğraf çek<input type="file" id="fCam" accept="image/*" capture="environment"></label>
+        <label class="btn-ghost file-btn" for="fGal">Galeriden seç<input type="file" id="fGal" accept="image/*"></label>
+      </div>
+      <div class="pv-box" id="pvBox" hidden><canvas id="pv" aria-label="Sansürlenmiş fotoğraf önizlemesi"></canvas></div>
+      <p class="status" id="cStatus" role="status"></p>
+      <div class="row" id="cTools" hidden>
+        <button type="button" class="btn-ghost" id="btnUndo" disabled>Geri al</button>
+        <button type="button" class="btn-ghost" id="btnRedetect">Otomatik sansürü yeniden çalıştır</button>
+      </div>
+      <p class="note" id="cHelp" hidden>Kaçırılan bir yüz ya da plaka görürsen <b>üzerine parmağınla kutu çiz</b>; o alan pikselleşir. Yanlış bir kutuya dokunursan kaldırılır.</p>
+    </section>
+
+    <section class="step" aria-labelledby="s2h">
+      <div class="step-h"><b>02</b><h3 id="s2h">Konum</h3></div>
+      <div class="row"><button type="button" class="btn-primary" id="btnGps">Konumumu paylaş</button></div>
+      <p class="status" id="nearHint" hidden></p>
+      <p class="status" id="gStatus" role="status">Konumunu paylaşınca adres otomatik bulunur. Pini sürükleyip çöpün tam yerine taşıyabilirsin.</p>
+      <div id="pickMap" aria-label="Çöpün yerini işaretle"></div>
+      <div class="grid2">
+        <label class="fld">İlçe<select id="fIlce" required><option value="">İlçe seç</option></select></label>
+        <label class="fld">Mahalle<input id="fMah" maxlength="40" autocomplete="off" placeholder="Konumdan doldurulur"></label>
+        <label class="fld span2">Sokak ya da cadde<input id="fSok" maxlength="60" autocomplete="off" placeholder="Konumdan doldurulur"></label>
+        <label class="fld span2">Yer tarifi <span class="opt">(isteğe bağlı)</span><input id="fTarif" maxlength="80" autocomplete="off" placeholder="Örn. fırının karşısı, konteynerin yanı"></label>
+      </div>
+    </section>
+
+    <section class="step" aria-labelledby="s3h">
+      <div class="step-h"><b>03</b><h3 id="s3h">Çöp yüzdesi</h3></div>
+      <div class="row" id="aiRow">
+        <button type="button" class="btn-primary" id="btnAnalyze">Bilirkişiye gönder</button>
+        <button type="button" class="btn-ghost" id="btnManual">Göz kararı gir</button>
+      </div>
+      <p class="status" id="aStatus" role="status"></p>
+      <div id="result" hidden style="display:grid;gap:14px">
+        <div class="res s3" id="res">
+          <span class="stamp" id="resStamp">%0<small>ÇÖP</small></span>
+          <div><p class="res-stage" id="resStage"></p><h4 id="resTitle"></h4><p id="resComment"></p><ul class="chips" id="resChips"></ul></div>
+        </div>
+        <div class="slider">
+          <label for="fPct" id="fPctLabel">Bilirkişiye itiraz et</label>
+          <input type="range" id="fPct" min="0" max="100" step="1" value="50">
+          <output id="fPctOut" for="fPct">%50</output>
+        </div>
+        <p class="warn" id="resWarn" hidden>Bilirkişi fotoğrafta hâlâ tanınabilir bir yüz ya da okunabilir bir plaka gördü. Yukarıdaki fotoğrafta o alanın üzerine kutu çizip sansürle.</p>
+      </div>
+    </section>
+
+    <section class="step" aria-labelledby="s4h">
+      <div class="step-h"><b>04</b><h3 id="s4h">Yayınla</h3></div>
+      <label class="check"><input type="checkbox" id="fOk"><span>Fotoğrafı kontrol ettim; tanınabilir bir yüz ya da okunabilir bir plaka kalmadı. Fotoğraf gerçek ve bu konumda çekildi.</span></label>
+      <p class="status" id="pStatus" role="status"></p>
+      <div class="row"><button type="button" class="btn-primary" id="btnPublish">Tutanağı yayınla</button></div>
+    </section>
+  </div>
+</div>
+
+<!-- telefona yükle -->
+<div class="dlg-wrap" id="installHelp" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="ihTitle">
+    <div class="dlg-head">
+      <div><p class="eyebrow">Ücretsiz · reklamsız · hesap yok</p><h2 id="ihTitle">Telefona yükle</h2></div>
+      <button class="x" id="ihClose" type="button" aria-label="Kapat">×</button>
+    </div>
+    <div class="row" id="ihGoRow" hidden><button type="button" class="btn-primary" id="ihGo">Şimdi yükle</button></div>
+    <ol class="ih-steps" id="ihSteps"></ol>
+    <p class="note">Yükledikten sonra Çöpİzmir ana ekranında kendi simgesiyle açılır, uygulama gibi çalışır. Mağazadan indirmen gerekmez.</p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="x" id="lbClose" type="button" aria-label="Kapat">×</button>
+  <div><img id="lbImg" alt=""><p class="mono" id="lbCap"></p></div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(() => {
+  "use strict";
+  /* ---------- config ---------- */
+  const API = String(window.COPIZMIR_API || "").replace(/\/$/, "");
+  const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+  const MPV = "0.10.20";
+  const MP_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MPV}`;
+  const FACE_MODEL = "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite";
+  const OBJ_MODEL = "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite";
+  const IZMIR = [27.142, 38.423];
+  const PIN_RADIUS = 300;   // GPS varken pin en fazla bu kadar metre taşınabilir
+  const MAP_H = ["#2A694B", "#62862A", "#B98F00", "#DB730E", "#CF4512", "#B21F2A"];
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const str = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+  const clampPct = (v) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0; };
+  const nf1 = (n) => n.toLocaleString("tr-TR", { maximumFractionDigits: 1 });
+  const upTR = (s) => String(s).toLocaleUpperCase("tr-TR");
+  const LS = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  const DC = { // ilçe merkezleri (yaklaşık) — en yakın ilçe tahmini için
+    "Aliağa": [38.800, 26.972], "Balçova": [38.388, 27.050], "Bayındır": [38.218, 27.648], "Bayraklı": [38.468, 27.170],
+    "Bergama": [39.120, 27.180], "Beydağ": [38.085, 28.210], "Bornova": [38.468, 27.235], "Buca": [38.385, 27.180],
+    "Çeşme": [38.323, 26.303], "Çiğli": [38.505, 27.050], "Dikili": [39.072, 26.890], "Foça": [38.670, 26.757],
+    "Gaziemir": [38.322, 27.135], "Güzelbahçe": [38.362, 26.895], "Karabağlar": [38.378, 27.115], "Karaburun": [38.638, 26.512],
+    "Karşıyaka": [38.472, 27.105], "Kemalpaşa": [38.427, 27.415], "Kınık": [39.087, 27.383], "Kiraz": [38.230, 28.205],
+    "Konak": [38.410, 27.140], "Menderes": [38.252, 27.134], "Menemen": [38.600, 27.070], "Narlıdere": [38.388, 26.995],
+    "Ödemiş": [38.228, 27.970], "Seferihisar": [38.197, 26.838], "Selçuk": [37.951, 27.368], "Tire": [38.089, 27.735],
+    "Torbalı": [38.165, 27.360], "Urla": [38.322, 26.775]
+  };
+  const DISTRICTS = Object.keys(DC).sort((a, b) => a.localeCompare(b, "tr"));
+  const STAGE_NAMES = ["Misafir gelecek galiba", "Çekirdek kabuğu seviyesi", "Talebiniz iletilmiştir", "Kediler açık büfe ilan etti", "Martılar ihaleyi aldı", "Harmandalı şubesi açıldı"];
+  const STAGE_DESC = [
+    "Şüpheli derecede temiz. Kim geliyor?",
+    "Birileri maç izlemiş, kabuklar hatıra kalmış.",
+    "Şikâyet edildi, cevap geldi, çöp kaldı.",
+    "Rezervasyon gerekmez, menü her gün değişir.",
+    "Koku, sokağın adından önce geliyor.",
+    "Yığın kendi muhtarını seçecek nüfusa ulaştı."
+  ];
+  const STAGE_RNG = ["0–9", "10–29", "30–49", "50–69", "70–89", "90–100"];
+  const STAGES = [ // sunucudaki kalıplarla aynı; varyant = yüzde % 3
+    [["Misafir temizliği tespit edildi", "Sokak, annelerin misafir beklerken yaptığı temizlik seviyesinde. Bilirkişi kimin geleceğini merak ediyor."], ["Şüpheli temizlik vakası", "Kayda değer çöp bulunamadı. Fotoğrafın başka bir şehirde çekilmiş olabileceği değerlendiriliyor."], ["Bu sokak kartpostal oldu", "Ortalık o kadar temiz ki insan ayakkabısını çıkarıp girmek istiyor. Tadını çıkarın, uzun sürmeyebilir."]],
+    [["Maç çıkışı kalıntıları", "Birileri burada maç izlemiş, çekirdek kabukları hatıra olarak bırakılmış. Skor bilinmiyor, kabuklar kalıcı."], ["Poşet keşif kolu", "Öncü poşetler bölgeye yerleşmiştir. Ana kuvvetin hafta sonu gelmesi bekleniyor."], ["Utangaç çöp vakası", "Çöp henüz köşede, kimseye görünmemeye çalışıyor. İki gün içinde kaldırıma çıkıp selam vermesi bekleniyor."]],
+    [["Talebiniz ilgili birime iletilmiştir", "Şikâyet edildi, cevap geldi, çöp kaldı. İlgili birimin kim olduğu hâlâ araştırılıyor."], ["Çöp adres kaydı yaptırdı", "Yığın bu sokakta ikamet ettiğini beyan etmiştir. Nüfus kaydının çıkması an meselesi."], ["Bakarız seviyesine ulaşıldı", "Herkesin gördüğü ama kimsenin bakmadığı aşamaya gelindi. Komşular yığının etrafından dolaşmayı alışkanlık edindi."]],
+    [["Açık büfe resmen açıldı", "Mahallenin kedileri bölgeyi açık büfe ilan etmiştir. Rezervasyon gerekmez, menü her gün değişir."], ["Kedi kolonisi kuruldu", "Kediler vardiya usulü çalışmaya başlamış, martılar gözlemci statüsünde. Bölgenin yeni yöneticileri belli oldu."], ["Çöp nirengi noktası oldu", "Yol tarifleri artık çöpü geçince sağa dön diye veriliyor. Kuryeler bile sokağı buradan tanıyor."]],
+    [["Martılar ihaleyi kazandı", "Çöpün yönetimi fiilen martılara geçmiştir. İtiraz süresi doldu, martılar işe başladı."], ["Koku sokağın önüne geçti", "Bölgenin kokusu sokağın adından önce tanınıyor. Yol tarifi artık kokuyu takip et diye veriliyor."], ["Konteyner istifa etti", "Konteyner kapasitesini çoktan aşmış, görevi kaldırıma devretmiştir. Yayalar alternatif güzergâh arıyor."]],
+    [["Harmandalı şubesi açıldı", "Yığın, şehrin çöp merkezine rakip olacak büyüklüğe ulaştı. Şubeye ayrıca tabela asılması öneriliyor."], ["Yeni ilçe ilan edilebilir", "Çöp kendi muhtarını seçecek nüfusa ulaştı. Haritaya eklenmesi ve posta kodu verilmesi bekleniyor."], ["Çöp dağına zirve tırmanışı", "Yığının zirvesine çıkmak için kamp kurmak gerekiyor. Martılar burayı yuva, kediler ana üs ilan etti."]]
+  ];
+  const stageIdx = (p) => (p >= 90 ? 5 : p >= 70 ? 4 : p >= 50 ? 3 : p >= 30 ? 2 : p >= 10 ? 1 : 0);
+  const template = (y) => { const v = STAGES[stageIdx(y)][y % 3]; return { baslik: v[0], yorum: v[1] }; };
+  const LOADING = ["Poşetler tek tek sayılıyor…", "Martıların ifadesi alınıyor…", "Konteynerin kapağı aranıyor…", "Kedilere danışılıyor…", "Koku ölçülemedi, ekran kokmuyor…", "Belediye aranıyor… hat meşgul…", "Tutanak kaşesi ısıtılıyor…"];
+
+  const PAGE = 12;
+  const S = { posts: [], byId: new Map(), loaded: false, err: null, filter: null, sort: LS.get("copizmir.sort", "yeni"), shown: PAGE, lastLoad: 0 };
+  // sunucudaki ilçe sırası (akıştaki ilçe numaraları buna göre)
+  const SDIST = ["Aliağa","Balçova","Bayındır","Bayraklı","Bergama","Beydağ","Bornova","Buca","Çeşme","Çiğli","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kınık","Kiraz","Konak","Menderes","Menemen","Narlıdere","Ödemiş","Seferihisar","Selçuk","Tire","Torbalı","Urla"];
+  const CARD = new Map(), CARD_AT = new Map(), PENDING = new Map(), LOCAL = new Map(), FULL = new Map();
+  // yalnızca baştan sona geçerli JPEG data: adresi gösterilir (içine HTML/JS sızdırılamaz)
+  const JPEG_URL = /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/;
+  const safeImg = (v) => (typeof v === "string" && v.length < 400000 && JPEG_URL.test(v) ? v : "");
+  if (!["yeni", "copl", "yasli", "mucize"].includes(S.sort)) S.sort = "yeni";
+  const done = LS.get("copizmir.done", {});
+  const markDone = (id, k, v = 1) => { done[id] = Object.assign({}, done[id], { [k]: v }); LS.set("copizmir.done", done); };
+
+  /* ---------- api ---------- */
+  // Anonim cihaz anahtarı: rastgele, kimliğe bağlı değil. Yalnızca aynı internet bağlantısını paylaşan
+  // farklı kişilerin (ör. mobil operatör) birbirinin hız sınırını doldurmaması için gönderilir.
+  const CIHAZ = (() => {
+    let v = LS.get("copizmir.cihaz", "");
+    if (!/^[a-f0-9]{24}$/.test(v)) { const u = new Uint8Array(12); crypto.getRandomValues(u); v = [...u].map((b) => b.toString(16).padStart(2, "0")).join(""); LS.set("copizmir.cihaz", v); }
+    return v;
+  })();
+  async function api(path, body) {
+    let r;
+    const opt = !body ? {} : body instanceof FormData ? { method: "POST", headers: { "X-Cihaz": CIHAZ }, body }
+      : { method: "POST", headers: { "Content-Type": "application/json", "X-Cihaz": CIHAZ }, body: JSON.stringify(body) };
+    try { r = await fetch(API + path, opt); }
+    catch (e) { const er = new Error("Sunucuya ulaşılamadı. İnternet bağlantını kontrol et."); er.status = 0; throw er; }
+    let j = null; try { j = await r.json(); } catch (e) {}
+    if (!r.ok || !j) {
+      const busy = !j && (r.status === 429 || r.status >= 500 || r.status === 200);
+      const e = new Error((j && j.message) || (busy ? "Çöpİzmir şu an çok yoğun. Birkaç dakika sonra tekrar dene." : "Sunucuya ulaşılamadı. Bağlantını kontrol et."));
+      e.status = r.status; e.code = j && j.error; e.data = j; throw e;
+    }
+    return j;
+  }
+  /* isteğe bağlı robot doğrulaması (Cloudflare Turnstile, ücretsiz) */
+  let tsReady = null;
+  function tsToken() {
+    const key = window.COPIZMIR_TURNSTILE;
+    if (!key) return Promise.resolve("");
+    if (!tsReady) tsReady = new Promise((res, rej) => {
+      const sc = document.createElement("script");
+      sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; sc.async = true;
+      sc.onload = () => res(); sc.onerror = () => { tsReady = null; rej(new Error("Robot doğrulaması yüklenemedi. Sayfayı yenile.")); };
+      document.head.appendChild(sc);
+    });
+    return tsReady.then(() => new Promise((res, rej) => {
+      const box = document.createElement("div");
+      box.style.cssText = "position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90";
+      document.body.appendChild(box);
+      let settled = false;
+      const done = () => { settled = true; clearTimeout(timer); setTimeout(() => { try { window.turnstile.remove(wid); } catch (e) {} box.remove(); }, 0); };
+      const fail = () => { if (settled) return; rej(new Error("Robot doğrulaması tamamlanamadı. Tekrar dene.")); done(); };
+      const timer = setTimeout(fail, 90000);
+      const wid = window.turnstile.render(box, { sitekey: key, appearance: "interaction-only", language: "tr",
+        callback: (t) => { if (settled) return; res(t); done(); }, "error-callback": fail, "timeout-callback": fail, "expired-callback": fail });
+    }));
+  }
+  function fromCompact(a, at) {
+    const [id, lat, lng, di, pct, fl, mins, tanik, mmins] = a;
+    const p = { id: String(id), lat: Number(lat), lng: Number(lng), ilce: SDIST[di] || "Konak", pct: clampPct(pct), status: fl & 1 ? "mucize" : "orada",
+      dogrulandi: !!(fl & 2), ai: !!(fl & 4), created_at: (Number(mins) || 0) * 60000, tanik: Number(tanik) || 0, mucize_at: (Number(mmins) || 0) * 60000, det: false };
+    const c = CARD.get(p.id); if (c) mergeCard(p, c, false);
+    const L = LOCAL.get(p.id); if (L && (at || 0) < L.at + 5000) Object.assign(p, L.f);   // akış senin işlemini henüz içermiyor
+    return p;
+  }
+  function mergeCard(p, c, fresh) {
+    Object.assign(p, {
+      mahalle: str(c.mahalle, 40), sokak: str(c.sokak, 60), tarif: str(c.tarif, 80),
+      yuzde: clampPct(c.yuzde), oy_sayi: Math.max(0, Number(c.oy_sayi) || 0), oy_toplam: Math.max(0, Number(c.oy_toplam) || 0),
+      baslik: str(c.baslik, 70), yorum: str(c.yorum, 280), tespitler: Array.isArray(c.tespitler) ? c.tespitler.slice(0, 4).map((t) => str(t, 48)).filter(Boolean) : [],
+      ai: !!c.ai, sansur: Number(c.sansur) || 0, mucize_n: Number(c.mucize_n) || 0, full: c.full !== false,
+      thumb: safeImg(c.thumb), det: true
+    });
+    if (fresh) { applyCounters(p, c); }   // akıştan yeni gelen kart: sayaçlar da güncel
+  }
+  function applyCounters(p, c) {
+    p.tanik = Math.max(0, Number(c.tanik) || 0); p.mucize_n = Math.max(0, Number(c.mucize_n) || 0);
+    p.status = c.status === "mucize" ? "mucize" : "orada"; p.mucize_at = Number(c.mucize_at) || 0;
+    p.oy_sayi = Math.max(0, Number(c.oy_sayi) || 0); p.oy_toplam = Math.max(0, Number(c.oy_toplam) || 0);
+    recompute(p);
+  }
+  // Kart ayrıntıları 12'lik paketlerle gelir. Yolda olan istek tekrar edilmez, beklenir.
+  // Dönen: { got: yeni gelen var mı, gone: yayından kalkan var mı }
+  async function ensureCards(ids, force) {
+    const uniq = [...new Set(ids)];
+    const waits = uniq.filter((id) => PENDING.has(id)).map((id) => PENDING.get(id));
+    const need = uniq.filter((id) => (force || !CARD.has(id)) && !PENDING.has(id));
+    const out = { got: waits.length > 0, gone: false };
+    const jobs = [];
+    for (let i = 0; i < need.length; i += PAGE) {
+      const batch = need.slice(i, i + PAGE);
+      const job = (async () => {
+        try {
+          const j = await api("/api/cards?ids=" + batch.join(","));
+          const seen = new Set(), now = Date.now();
+          for (const c of j.cards || []) {
+            seen.add(c.id); CARD.set(c.id, c); CARD_AT.set(c.id, now);
+            const p = S.byId.get(c.id); if (p) { mergeCard(p, c, !!force); out.got = true; }
+          }
+          for (const id of batch) if (!seen.has(id)) { const p = S.byId.get(id); if (p && !p.mine) { p.gone = true; out.gone = true; } }
+        } catch (e) { /* kartlar sonra tekrar denenir */ }
+        finally { batch.forEach((id) => PENDING.delete(id)); }
+      })();
+      batch.forEach((id) => PENDING.set(id, job));
+      jobs.push(job);
+    }
+    await Promise.all(jobs.concat(waits));
+    if (out.gone) setPosts(S.posts.filter((p) => !p.gone));
+    return out;
+  }
+  function normPost(x) {
+    const p = {
+      id: String(x.id || ""), created_at: Number(x.created_at) || 0, lat: Number(x.lat), lng: Number(x.lng),
+      ilce: DISTRICTS.includes(x.ilce) ? x.ilce : "Konak", mahalle: str(x.mahalle, 40), sokak: str(x.sokak, 60), tarif: str(x.tarif, 80),
+      yuzde: clampPct(x.yuzde), oy_sayi: Math.max(0, Number(x.oy_sayi) || 0), oy_toplam: Math.max(0, Number(x.oy_toplam) || 0),
+      baslik: str(x.baslik, 70), yorum: str(x.yorum, 280), tespitler: Array.isArray(x.tespitler) ? x.tespitler.slice(0, 4).map((t) => str(t, 48)).filter(Boolean) : [],
+      ai: !!x.ai, sansur: Number(x.sansur) || 0, tanik: Number(x.tanik) || 0, mucize_n: Number(x.mucize_n) || 0,
+      status: x.status === "mucize" ? "mucize" : "orada", mucize_at: Number(x.mucize_at) || 0, dogrulandi: !!x.dogrulandi,
+      full: x.full !== false, thumb: safeImg(x.thumb), det: true
+    };
+    p.pct = clampPct((p.yuzde + p.oy_toplam) / (1 + p.oy_sayi));
+    return p;
+  }
+  const recompute = (p) => { p.pct = clampPct((p.yuzde + p.oy_toplam) / (1 + p.oy_sayi)); };
+  function setPosts(list) {
+    S.posts = list.filter((p) => /^[a-f0-9]{16}$/.test(p.id) && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    S.byId = new Map(S.posts.map((p) => [p.id, p]));
+  }
+  async function loadPosts() {
+    S.lastLoad = Date.now();
+    try {
+      const j = await api("/api/feed");
+      const mine = S.posts.filter((p) => p.mine && !(j.p || []).some((a) => a[0] === p.id));  // yeni yayınladığın, akışa henüz düşmediyse kalsın
+      setPosts(mine.concat((j.p || []).map((a) => fromCompact(a, j.at))));
+      S.err = null;
+    } catch (e) { S.err = e.message; }
+    const first = !S.loaded;
+    S.loaded = true;
+    renderAll();
+    if (first) openFromHash();
+  }
+
+  /* ---------- helpers ---------- */
+  const fullUrl = (id) => `${API}/api/img/${id}`;
+  // büyük fotoğraf sunucudan base64 metin olarak gelir (sunucu bayt dönüştürmesin diye); son 12'si bellekte
+  async function loadFull(id) {
+    if (FULL.has(id)) return FULL.get(id);
+    try {
+      const r = await fetch(fullUrl(id));
+      const v = r.ok ? safeImg(await r.text()) : "";
+      if (v) { FULL.set(id, v); if (FULL.size > 12) FULL.delete(FULL.keys().next().value); }
+      return v;
+    } catch (e) { return ""; }
+  }
+  const PH_IMG = "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><rect width="4" height="3" fill="#cbd3c9" opacity=".35"/></svg>');
+  const addrText = (p) => [p.sokak, p.mahalle ? p.mahalle + " Mah." : "", p.ilce].filter(Boolean).join(", ");
+  function tno(p) {
+    const d = new Date(p.created_at || Date.now());
+    return `ÇİZ-${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}-${p.id.slice(-4).toUpperCase()}`;
+  }
+  const fmtDate = (ms) => { const d = new Date(ms); return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }); };
+  function ageText(p, now = Date.now()) {
+    const ms = Math.max(0, (p.status === "mucize" ? p.mucize_at : now) - p.created_at);
+    const h = Math.floor(ms / 3600000), d = Math.floor(ms / 86400000);
+    if (p.status === "mucize") return d >= 1 ? `${d} günde temizlendi` : `${Math.max(1, h)} saatte temizlendi`;
+    return d >= 1 ? `${d} gün` : h >= 1 ? `${h} saat` : "Taze";
+  }
+  function dist(a, b) { // metre
+    const R = 6371000, toR = Math.PI / 180;
+    const dLat = (b[1] - a[1]) * toR, dLng = (b[0] - a[0]) * toR;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * toR) * Math.cos(b[1] * toR) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+  function nearestDistrict(lng, lat) {
+    let best = "", bd = Infinity;
+    for (const [n, [la, lo]] of Object.entries(DC)) { const d = dist([lng, lat], [lo, la]); if (d < bd) { bd = d; best = n; } }
+    return best;
+  }
+  const shareUrl = (id) => location.origin + location.pathname + "#t/" + id;
+  let toastTimer = 0;
+  function toast(msg, ms = 3600) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+      const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (x) {} ta.remove(); return ok;
+    }
+  }
+
+  /* ---------- main map ---------- */
+  let map = null, mapReady = false;
+  function initMap() {
+    if (!window.maplibregl) { $("#map").innerHTML = '<p style="padding:24px;color:var(--muted)">Harita yüklenemedi. Bağlantını kontrol edip sayfayı yenile.</p>'; return; }
+    map = new maplibregl.Map({ container: "map", style: MAP_STYLE, center: IZMIR, zoom: 10.8, minZoom: 7, maxBounds: [[25.4, 37.4], [29.2, 39.8]], attributionControl: { compact: true }, cooperativeGestures: false });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 15 } }), "top-right");
+    map.on("load", () => {
+      map.addSource("posts", {
+        type: "geojson", data: geojson(), cluster: true, clusterRadius: 46, clusterMaxZoom: 15,
+        clusterProperties: { sum: ["+", ["case", ["==", ["get", "m"], 1], 0, ["get", "p"]]], open: ["+", ["case", ["==", ["get", "m"], 1], 0, 1]] }
+      });
+      const avg = ["/", ["get", "sum"], ["max", 1, ["get", "open"]]];
+      const step = (expr) => ["step", expr, MAP_H[0], 10, MAP_H[1], 30, MAP_H[2], 50, MAP_H[3], 70, MAP_H[4], 90, MAP_H[5]];
+      map.addLayer({ id: "clusters", type: "circle", source: "posts", filter: ["has", "point_count"],
+        paint: { "circle-color": ["case", ["==", ["get", "open"], 0], "#2A694B", step(avg)], "circle-opacity": 0.9, "circle-radius": ["step", ["get", "point_count"], 17, 10, 22, 50, 28], "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
+      map.addLayer({ id: "cluster-count", type: "symbol", source: "posts", filter: ["has", "point_count"],
+        layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["Noto Sans Bold"], "text-size": 13 }, paint: { "text-color": "#ffffff" } });
+      map.addLayer({ id: "pts", type: "circle", source: "posts", filter: ["!", ["has", "point_count"]],
+        paint: { "circle-color": ["case", ["==", ["get", "m"], 1], "#2A694B", step(["get", "p"])], "circle-opacity": ["case", ["==", ["get", "m"], 1], 0.55, 0.95],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 6, 14, 10, 17, 13], "circle-stroke-width": 2.5, "circle-stroke-color": "#ffffff" } });
+      map.addLayer({ id: "pts-label", type: "symbol", source: "posts", filter: ["!", ["has", "point_count"]], minzoom: 12.5,
+        layout: { "text-field": ["concat", "%", ["to-string", ["get", "p"]]], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-offset": [0, -1.6], "text-allow-overlap": false },
+        paint: { "text-color": "#151917", "text-halo-color": "#ffffff", "text-halo-width": 1.6 } });
+      map.on("click", "clusters", async (e) => {
+        const f = e.features && e.features[0]; if (!f) return;
+        try { const z = await map.getSource("posts").getClusterExpansionZoom(f.properties.cluster_id); map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.3 }); } catch (err) {}
+      });
+      map.on("click", "pts", (e) => { const f = e.features && e.features[0]; if (f) openDetail(f.properties.id); });
+      for (const l of ["clusters", "pts"]) {
+        map.on("mouseenter", l, () => { map.getCanvas().style.cursor = "pointer"; });
+        map.on("mouseleave", l, () => { map.getCanvas().style.cursor = ""; });
+      }
+      mapReady = true;
+      renderMapData();
+    });
+  }
+  function geojson() {
+    return { type: "FeatureCollection", features: S.posts.map((p) => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.lng, p.lat] }, properties: { id: p.id, p: p.pct, m: p.status === "mucize" ? 1 : 0 } })) };
+  }
+  function renderMapData() { if (mapReady) { const src = map.getSource("posts"); if (src) src.setData(geojson()); } }
+
+  /* ---------- render ---------- */
+  function renderAll() {
+    const now = Date.now();
+    renderMapData();
+    renderIndex(now);
+    renderTicker();
+    renderLeague();
+    renderFeed(now);
+    $("#mapEmpty").hidden = !(S.loaded && !S.err && S.posts.length === 0);
+    $("#mapErr").hidden = !S.err;
+    if (S.err) $("#mapErrText").textContent = S.err;
+  }
+
+  function renderIndex(now) {
+    const active = S.posts.filter((p) => p.status !== "mucize");
+    const idx = active.length ? Math.round(active.reduce((a, p) => a + p.pct, 0) / active.length) : 0;
+    const si = stageIdx(idx);
+    const num = $("#idxNum"), star = $("#idxStar"), line = $("#idxLine"), stg = $("#idxStage");
+    star.hidden = true; stg.hidden = true;
+    let heroLine;
+    if (!S.loaded) { num.textContent = "–"; line.textContent = "Tutanaklar getiriliyor…"; heroLine = "Endeks hesaplanıyor."; }
+    else if (S.err) { num.textContent = "–"; line.textContent = "Veriler şu an alınamıyor."; heroLine = "Sunucuya ulaşılamadığı için endeks hesaplanamadı."; }
+    else if (!S.posts.length) { num.textContent = "0"; star.hidden = false; line.textContent = "*Kimse bakmadığı için resmen tertemiz."; heroLine = "İzmir bugün %0 çöp. Veri yokluğu temizlik anlamına gelmez; ilk tutanağı sen tut."; }
+    else if (!active.length) { num.textContent = "0"; line.textContent = "Açık tutanak kalmadı."; heroLine = "Bütün çöpler temizlenmiş görünüyor ya da hepimiz aynı rüyayı görüyoruz."; }
+    else {
+      num.textContent = String(idx);
+      line.textContent = `İzmir bugün %${idx} çöp, %${100 - idx} şehir.`;
+      stg.hidden = false; stg.className = "idx-stage s" + si; stg.textContent = STAGE_NAMES[si];
+      heroLine = `İzmir bugün %${idx} çöp, %${100 - idx} şehir. Ölçekteki yeri: ${STAGE_NAMES[si]}.`;
+    }
+    $("#heroLine").textContent = heroLine;
+    const ages = active.map((p) => (now - p.created_at) / 86400000);
+    $("#stOpen").textContent = String(active.length);
+    $("#stAge").textContent = ages.length ? nf1(ages.reduce((a, b) => a + b, 0) / ages.length) + " gün" : "—";
+    $("#stMir").textContent = String(S.posts.length - active.length);
+    $("#stTan").textContent = String(S.posts.reduce((a, p) => a + p.tanik, 0));
+    const on = active.length ? si : -1;
+    $("#scale").innerHTML = [5, 4, 3, 2, 1, 0].map((i) =>
+      `<li class="s${i}${i === on ? " on" : ""}"><span class="sw"></span><span class="rng mono">%${STAGE_RNG[i]}</span><span class="nm">${esc(STAGE_NAMES[i])}<small>${esc(STAGE_DESC[i])}</small></span><span class="now">◀ BUGÜN</span></li>`).join("");
+  }
+
+  function renderTicker() {
+    let items;
+    if (!S.loaded) items = ["TUTANAKLAR GETİRİLİYOR"];
+    else if (S.err) items = ["VERİ AKIŞI KESİK", "BİLİRKİŞİ HAT BEKLİYOR"];
+    else if (!S.posts.length) items = ["HENÜZ TUTANAK YOK", "KİMSE BAKMADIĞI İÇİN İZMİR RESMEN TERTEMİZ", "İLK TUTANAĞI SEN TUT"];
+    else items = S.posts.slice(0, 14).map((p) => p.status === "mucize" ? `${upTR(p.ilce)}${p.mahalle ? " / " + upTR(p.mahalle) : ""} TEMİZLENDİ` : `${upTR(p.ilce)}${p.mahalle ? " / " + upTR(p.mahalle) : ""} %${p.pct} ${p.pct >= 50 ? "▲" : "▼"}`);
+    const html = items.map((t) => `<span>${esc(t)}</span><span aria-hidden="true">·</span>`).join("");
+    const el = $("#ticker"); el.innerHTML = html + html; el.style.setProperty("--dur", Math.max(24, items.length * 6) + "s");
+  }
+
+  function aggregate() {
+    const m = new Map();
+    for (const p of S.posts) {
+      const d = m.get(p.ilce) || { ilce: p.ilce, sum: 0, n: 0, all: 0, mucize: 0, avg: 0 };
+      d.all++; if (p.status === "mucize") d.mucize++; else { d.sum += p.pct; d.n++; }
+      m.set(p.ilce, d);
+    }
+    for (const d of m.values()) d.avg = d.n ? Math.round(d.sum / d.n) : 0;
+    return m;
+  }
+  function renderLeague() {
+    const agg = aggregate();
+    const rows = [...agg.values()].sort((a, b) => b.avg - a.avg || b.all - a.all);
+    const el = $("#league");
+    if (!rows.length) {
+      el.innerHTML = `<li class="lg-zero">${S.loaded ? "Lig henüz başlamadı. İlk tutanağın geldiği ilçe doğrudan zirveye yerleşir." : "Puan durumu hesaplanıyor…"}</li>`;
+      $("#leagueRest").textContent = ""; return;
+    }
+    el.innerHTML = rows.map((d, i) => {
+      const si = d.n ? stageIdx(d.avg) : 0;
+      let tag = "";
+      if (i === 0 && d.n) tag = `<span class="lg-tag">Şampiyon</span>`;
+      else if (rows.length >= 4 && i === rows.length - 1) tag = `<span class="lg-tag" title="Fazla temiz, ligden düşebilir">Küme hattı</span>`;
+      return `<li><button type="button" class="lg-row s${si}${S.filter === d.ilce ? " sel" : ""}" data-ilce="${esc(d.ilce)}"><span class="lg-rk mono">${i + 1}</span><span class="lg-nm">${esc(d.ilce)}${tag}<small>${d.all} tutanak${d.mucize ? ` · ${d.mucize} mucize` : ""}</small></span><span class="lg-bar"><i style="width:${d.avg}%"></i></span><span class="lg-pc">%${d.avg}</span></button></li>`;
+    }).join("");
+    const rest = DISTRICTS.filter((n) => !agg.has(n));
+    $("#leagueRest").textContent = rest.length ? `Tutanaksız ilçeler (${rest.length}): ${rest.join(", ")}. Ya çok temizler ya da kimse bakmıyor.` : "";
+  }
+
+  function sorted() {
+    let l = S.filter ? S.posts.filter((p) => p.ilce === S.filter) : [...S.posts];
+    if (S.sort === "copl") return l.filter((p) => p.status !== "mucize").sort((a, b) => b.pct - a.pct || b.created_at - a.created_at);
+    if (S.sort === "yasli") return l.filter((p) => p.status !== "mucize").sort((a, b) => a.created_at - b.created_at);
+    if (S.sort === "mucize") return l.filter((p) => p.status === "mucize").sort((a, b) => b.mucize_at - a.mucize_at);
+    return l.sort((a, b) => b.created_at - a.created_at);
+  }
+  function renderFeed(now) {
+    for (const b of document.querySelectorAll("#sortSeg button")) b.setAttribute("aria-pressed", String(b.dataset.sort === S.sort));
+    const chip = $("#filterChip"); chip.hidden = !S.filter;
+    if (S.filter) chip.innerHTML = `${esc(S.filter)} <span aria-hidden="true">×</span><span class="sr">filtreyi kaldır</span>`;
+    const feed = $("#feed"), more = $("#btnMore");
+    if (!S.loaded) return;
+    const list = sorted();
+    more.hidden = list.length <= S.shown;
+    if (!list.length) {
+      let h, p, btn = true;
+      if (S.err) { h = "Tutanaklar alınamadı"; p = S.err; btn = false; }
+      else if (!S.posts.length) { h = "Resmi kayıtlara göre İzmir tertemiz"; p = "Çünkü henüz kimse bakmadı. Sokakta gördüğün çöpün fotoğrafını çek, konumunu paylaş; yüzdesini bilirkişi söylesin."; }
+      else if (S.sort === "mucize") { h = "Henüz mucize yaşanmadı"; p = "Temizlenen bir çöp gördüğünde tutanağında Temizlenmiş düğmesine bas. İki kişi onaylayınca mucize kayda geçer."; btn = false; }
+      else if (S.filter) { h = `${S.filter} için tutanak yok`; p = "Ya gerçekten çok temiz ya da kimse bakmıyor."; }
+      else { h = "Açık tutanak yok"; p = "Listedeki bütün çöpler temizlenmiş görünüyor. Şüpheli ama güzel."; btn = false; }
+      feed.innerHTML = `<div class="empty"><h3>${esc(h)}</h3><p>${esc(p)}</p>${btn ? '<button type="button" class="btn-primary" data-open-report>Çöp bildir</button>' : ""}</div>`;
+      return;
+    }
+    const shown = list.slice(0, S.shown);
+    const missing = shown.filter((p) => !p.det).map((p) => p.id);
+    if (missing.length) ensureCards(missing).then((r) => { if (r.gone) renderAll(); else if (r.got) renderFeed(Date.now()); });
+    feed.innerHTML = shown.map((p) => {
+      const si = stageIdx(p.pct), mir = p.status === "mucize";
+      return `<button type="button" class="card s${si}${mir ? " is-mir" : ""}" data-id="${p.id}" aria-label="${esc(p.ilce)} tutanağını aç">
+        <span class="card-top mono" style="width:100%"><span>TUTANAK ${esc(tno(p))}</span><span>${esc(fmtDate(p.created_at))}</span></span>
+        <span class="photo"><img src="${esc(p.thumb || PH_IMG)}" alt="" decoding="async"><span class="stamp">%${p.pct}<small>ÇÖP</small></span>${mir ? `<span class="stamp stamp-ok">TEMİZLENDİ<small>MUCİZE</small></span>` : ""}<span class="badges">${p.dogrulandi ? '<span class="badge v">Yerinde tespit</span>' : ""}</span></span>
+        <span class="card-body"><span class="card-title">${esc(p.det ? p.baslik : "Tutanak getiriliyor…")}</span><span class="loc">${esc(addrText(p))}</span></span>
+        <span class="card-foot"><span>${mir ? "Sonuç" : "Çöp yaşı"} <strong>${esc(ageText(p, now))}</strong></span><span>Tanık <strong>${p.tanik}</strong></span></span>
+      </button>`;
+    }).join("");
+  }
+
+  /* ---------- feed interactions ---------- */
+  function setFilter(name) { S.filter = S.filter === name ? null : name; S.shown = PAGE; if (S.sort === "mucize") S.sort = "yeni"; renderAll(); if (S.filter) $("#feedSec").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  $("#league").addEventListener("click", (e) => { const b = e.target.closest("[data-ilce]"); if (b) setFilter(b.dataset.ilce); });
+  $("#filterChip").addEventListener("click", () => { S.filter = null; renderAll(); });
+  $("#sortSeg").addEventListener("click", (e) => { const b = e.target.closest("[data-sort]"); if (!b) return; S.sort = b.dataset.sort; S.shown = PAGE; LS.set("copizmir.sort", S.sort); renderAll(); });
+  $("#btnMore").addEventListener("click", () => { S.shown += PAGE; renderFeed(Date.now()); });
+  $("#feed").addEventListener("click", (e) => { const c = e.target.closest(".card[data-id]"); if (c) openDetail(c.dataset.id); });
+  $("#btnRetry").addEventListener("click", () => { S.err = null; renderAll(); loadPosts(); });
+  document.addEventListener("click", (e) => { const o = e.target.closest("[data-open-report]"); if (o) openSheet(o); });
+
+  /* ---------- dialogs (shared) ---------- */
+  let lastFocus = null;
+  function openDlg(el) { lastFocus = document.activeElement; el.hidden = false; document.body.style.overflow = "hidden"; }
+  function closeDlg(el) { el.hidden = true; if ($("#sheet").hidden && $("#detail").hidden) document.body.style.overflow = ""; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!$("#lightbox").hidden) closeLightbox();
+    else if (!$("#detail").hidden) closeDetail();
+    else if (!$("#sheet").hidden) closeSheet();
+    else if (!$("#installHelp").hidden) closeDlg($("#installHelp"));
+  });
+
+  /* ---------- detail ---------- */
+  let curId = null;
+  async function openDetail(id) {
+    let p = S.byId.get(id); if (!p) return;
+    curId = id;
+    if (!p.det) {
+      const r = await ensureCards([id]); if (curId !== id) return;
+      if (r.gone) renderAll();
+      p = S.byId.get(id) || p;                                    // bu arada akış yenilenmiş olabilir
+    }
+    if (!p.det) { toast(p.gone ? "Bu tutanak yayından kaldırılmış." : "Tutanak yüklenemedi. Bağlantını kontrol edip tekrar dene."); curId = null; return; }
+    renderDetail(p);
+    if (!p.mine && Date.now() - (CARD_AT.get(id) || 0) > 60000)  // eski kart: sayaçları arkada tazele
+      ensureCards([id], true).then(() => { const q = S.byId.get(id); if (curId === id && q && q.det) renderDetail(q); });
+    if ($("#detail").hidden) openDlg($("#detail"));
+    try { history.replaceState(null, "", "#t/" + id); } catch (e) {}
+    setTimeout(() => { const x = $("#dtClose"); if (x) x.focus(); }, 30);
+  }
+  function closeDetail() { curId = null; closeDlg($("#detail")); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  $("#detail").addEventListener("click", (e) => { if (e.target.id === "detail") closeDetail(); });
+  function openFromHash() { const m = /^#t\/([a-f0-9]{16})$/.exec(location.hash); if (m && S.byId.has(m[1])) { openDetail(m[1]); const p = S.byId.get(m[1]); if (map) map.jumpTo({ center: [p.lng, p.lat], zoom: 15 }); } }
+  window.addEventListener("hashchange", openFromHash);
+
+  function complaintText(p) {
+    return `İzmir Büyükşehir Belediyesi Beyaz Masa'ya,\n\n${addrText(p)}${p.tarif ? " (" + p.tarif + ")" : ""} adresinde biriken çöp için temizlik talep ediyorum. ${ageText(p) === "Taze" ? "Çöp bugün bildirildi." : `Çöp ${ageText(p)} önce bildirildi.`}\n\nKonum: https://www.google.com/maps?q=${p.lat},${p.lng}\nFotoğraf ve tutanak: ${shareUrl(p.id)}\n\nTeşekkürler.`;
+  }
+  function renderDetail(p) {
+    const si = stageIdx(p.pct), mir = p.status === "mucize", d = done[p.id] || {};
+    const chips = p.tespitler.length ? `<ul class="chips">${p.tespitler.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "";
+    const jury = p.oy_sayi ? `%${p.pct}<small style="font-size:12px;font-family:var(--f-body);font-weight:500;color:var(--muted)"> · ${p.oy_sayi} oy</small>` : `%${p.pct}`;
+    $("#detailBody").className = "dlg dt s" + si + (mir ? " is-mir" : "");
+    $("#detailBody").innerHTML = `
+      <div class="dt-photo photo">
+        <button type="button" id="dtZoom" aria-label="Fotoğrafı büyüt"><img src="${esc(FULL.get(p.id) || p.thumb || PH_IMG)}" alt="${esc(addrText(p))} çöp fotoğrafı" id="dtImg"></button>
+        <span class="stamp" style="right:60px">%${p.pct}<small>ÇÖP</small></span>
+        ${mir ? `<span class="stamp stamp-ok">TEMİZLENDİ<small>${esc(ageText(p))}</small></span>` : ""}
+        <span class="badges">${p.dogrulandi ? '<span class="badge v" title="Fotoğraf uygulamadan çekildi, konum GPS ile paylaşıldı">Yerinde tespit</span>' : ""}${p.sansur ? `<span class="badge" title="Yüz ve plaka sansürü">KVKK · ${p.sansur} alan sansürlü</span>` : ""}</span>
+        <button class="x" id="dtClose" type="button" aria-label="Kapat">×</button>
+      </div>
+      <p class="dt-meta mono"><span>TUTANAK ${esc(tno(p))}</span><span>${esc(fmtDate(p.created_at))}</span></p>
+      <div><h2 id="dtTitle">${esc(p.baslik)}</h2><p class="addr">${esc(addrText(p))}</p>${p.tarif ? `<p class="note">${esc(p.tarif)}</p>` : ""}</div>
+      <p class="yorum"><span>Bilirkişi görüşü: </span>${esc(p.yorum)}</p>
+      ${chips}
+      <p class="note">${p.ai ? "Bilirkişi: yapay zekâ" : "Göz kararıyla bildirildi"}</p>
+      <dl class="facts">
+        <div><dt>${mir ? "Sonuç" : "Çöp yaşı"}</dt><dd>${esc(ageText(p))}</dd></div>
+        <div><dt>Tanık</dt><dd>${p.tanik}</dd></div>
+        <div><dt>Halk jürisi</dt><dd>${jury}</dd></div>
+      </dl>
+      <div class="acts">
+        <button type="button" data-act="tanik" class="${d.tanik ? "on" : ""}" ${d.tanik ? "disabled" : ""}>${d.tanik ? "Tanıklık ettin" : "Ben de gördüm"}</button>
+        ${mir ? "" : `<button type="button" data-act="mucize" class="${d.mucize ? "on" : ""}" ${d.mucize ? "disabled" : ""}>${d.mucize ? "Temizlendi dedin" : "Temizlenmiş"}</button>`}
+        <button type="button" data-act="share">Paylaş</button>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" rel="noopener">Yol tarifi ↗</a>
+        ${mir ? "" : `<button type="button" data-act="sikayet">153'e şikâyet et</button>`}
+      </div>
+      <div class="complaint" id="cmp" hidden>
+        <p class="note">Bu metni kopyalayıp İzmir Büyükşehir Belediyesi Beyaz Masa'ya ilet: <b>Alo 153</b> hattını arayabilir ya da belediyenin çözüm merkezine yazabilirsin.</p>
+        <textarea id="cmpText" readonly>${esc(complaintText(p))}</textarea>
+        <div class="acts"><button type="button" data-act="cmpcopy">Metni kopyala</button><a href="tel:153">Alo 153'ü ara</a></div>
+      </div>
+      <div class="slider">
+        <label for="dtVote">Halk jürisi: sence bu sokak yüzde kaç çöp?${d.oy != null ? ` Önceki oyun %${d.oy}.` : ""}</label>
+        <input type="range" id="dtVote" min="0" max="100" step="1" value="${d.oy != null ? d.oy : p.pct}">
+        <output id="dtVoteOut" for="dtVote">%${d.oy != null ? d.oy : p.pct}</output>
+      </div>
+      <div class="acts"><button type="button" data-act="oy">${d.oy != null ? "Oyumu güncelle" : "Oyumu ver"}</button></div>
+      <button type="button" class="linkish" data-act="rapor" ${d.rapor ? "disabled" : ""}>${d.rapor ? "Uygunsuz içerik olarak bildirdin" : "Uygunsuz içerik bildir"}</button>`;
+    if (p.full !== false && !FULL.has(p.id)) loadFull(p.id).then((u) => { const im = $("#dtImg"); if (u && im && curId === p.id) im.src = u; });
+  }
+  $("#detailBody").addEventListener("input", (e) => { if (e.target.id === "dtVote") $("#dtVoteOut").textContent = "%" + e.target.value; });
+  $("#detailBody").addEventListener("click", async (e) => {
+    if (e.target.closest("#dtClose")) return closeDetail();
+    if (e.target.closest("#dtZoom")) { const p = S.byId.get(curId); if (p) openLightbox(p); return; }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const p = S.byId.get(curId); if (!p) return;
+    const act = b.dataset.act;
+    if (act === "share") {
+      const url = shareUrl(p.id), text = `${addrText(p)}: %${p.pct} çöp tespit edildi. Bilirkişi görüşü: ${p.yorum}`;
+      if (navigator.share) { try { await navigator.share({ title: "Çöpİzmir tutanağı", text, url }); return; } catch (err) { if (err && err.name === "AbortError") return; } }
+      toast((await copyText(text + " " + url)) ? "Bağlantı kopyalandı. İstediğin yere yapıştır." : "Kopyalanamadı. Adres çubuğundaki bağlantıyı paylaşabilirsin.");
+      return;
+    }
+    if (act === "sikayet") { $("#cmp").hidden = !$("#cmp").hidden; return; }
+    if (act === "cmpcopy") { toast((await copyText($("#cmpText").value)) ? "Şikâyet metni kopyalandı. Alo 153'e iletebilirsin." : "Kopyalanamadı; metni seçip kopyala."); return; }
+    if (b.disabled) return;
+    b.disabled = true;
+    try {
+      let r;
+      if (act === "oy") {
+        const v = clampPct($("#dtVote").value);
+        r = await api(`/api/posts/${p.id}/act`, { type: "oy", value: v });
+        markDone(p.id, "oy", v);
+        toast(r.changed ? "Oyun kayda geçti. Halk jürisi teşekkür eder." : r.message || "Oyun zaten kayıtlı.");
+      } else {
+        r = await api(`/api/posts/${p.id}/act`, act === "rapor" ? { type: act, ts: await tsToken() } : { type: act });
+        if (r.changed && r.post) applyCounters(p, r.post);
+        if (r.changed) {
+          if (act === "tanik") toast("Tanıklığın kayda geçti.");
+          if (act === "mucize") toast(p.status === "mucize" ? "Mucize kayda geçti. Bilirkişi gözlerini ovuşturuyor." : "Not edildi. Bir kişi daha onaylarsa mucize kayda geçer.");
+          if (act === "rapor") toast("Bildirimin alındı. Üç bildirimde tutanak yayından kalkar.");
+        } else if (r.message) toast(r.message);
+        markDone(p.id, act);
+      }
+      if (r.changed && r.post) {
+        applyCounters(p, r.post);
+        const f = { tanik: p.tanik, mucize_n: p.mucize_n, oy_sayi: p.oy_sayi, oy_toplam: p.oy_toplam, status: p.status, mucize_at: p.mucize_at, pct: p.pct };
+        if (r.at) LOCAL.set(p.id, { at: Number(r.at), f });          // sunucu saati: akışın "at" değeriyle kıyaslanır
+        const c = CARD.get(p.id); if (c) Object.assign(c, f);
+      }
+      renderDetail(p); renderAll();
+    } catch (err) { toast(err.message); b.disabled = false; }
+  });
+
+  /* ---------- lightbox ---------- */
+  function openLightbox(p) {
+    $("#lbImg").src = $("#dtImg") ? $("#dtImg").src : (FULL.get(p.id) || p.thumb || PH_IMG);
+    $("#lbImg").alt = addrText(p) + " çöp fotoğrafı";
+    $("#lbCap").textContent = `TUTANAK ${tno(p)} · ${addrText(p)} · %${p.pct} ÇÖP`;
+    $("#lightbox").hidden = false; $("#lbClose").focus();
+  }
+  function closeLightbox() { $("#lightbox").hidden = true; const x = $("#dtZoom"); if (x) x.focus(); }
+  $("#lbClose").addEventListener("click", closeLightbox);
+  $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
+
+  /* =================================================================
+     ÇÖP BİLDİR
+     ================================================================= */
+  const D = {
+    src: null, viaCamera: false, photoAt: 0, boxes: [], undo: [], detectOk: false,
+    gps: null, pin: null, addrFilled: false, ilceTouched: false, markerAdded: false, aiOrig: null,
+    res: null, mode: null, aiYuzde: null, sig: null, busy: false, lineTimer: 0
+  };
+  const sel = $("#fIlce");
+  sel.insertAdjacentHTML("beforeend", DISTRICTS.map((d) => `<option>${esc(d)}</option>`).join(""));
+  sel.addEventListener("change", () => { D.ilceTouched = true; });
+  const setStatus = (id, text, cls = "") => { const el = $(id); el.textContent = text || ""; el.className = "status" + (cls ? " " + cls : ""); };
+
+  function openSheet() {
+    openDlg($("#sheet"));
+    initPickMap();
+    if (pickMap) setTimeout(() => pickMap.resize(), 60);
+    setTimeout(() => $("#sheetClose").focus(), 30);
+  }
+  function closeSheet() { clearInterval(D.lineTimer); closeDlg($("#sheet")); }
+  $("#sheetClose").addEventListener("click", closeSheet);
+  $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") closeSheet(); });
+  function resetSheet() {
+    Object.assign(D, { src: null, viaCamera: false, photoAt: 0, boxes: [], undo: [], detectOk: false, res: null, mode: null, aiYuzde: null, sig: null });
+    $("#pvBox").hidden = true; $("#cTools").hidden = true; $("#cHelp").hidden = true; $("#result").hidden = true; $("#resWarn").hidden = true;
+    $("#fCam").value = ""; $("#fGal").value = ""; $("#fTarif").value = ""; $("#fOk").checked = false;
+    setStatus("#cStatus", ""); setStatus("#aStatus", ""); setStatus("#pStatus", "");
+    $("#nearHint").hidden = true;
+  }
+
+  /* --- 01: fotoğraf + cihaz içi sansür --- */
+  let detP = null;
+  function loadDetectors() {
+    if (!detP) detP = (async () => {
+      const mp = await import(`${MP_BASE}/vision_bundle.mjs`);
+      const fs = await mp.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+      const face = await mp.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: FACE_MODEL, delegate: "CPU" }, runningMode: "IMAGE", minDetectionConfidence: 0.35 });
+      const obj = await mp.ObjectDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: OBJ_MODEL, delegate: "CPU" }, runningMode: "IMAGE", scoreThreshold: 0.28, maxResults: 40, categoryAllowlist: ["person", "car", "truck", "bus", "motorcycle"] });
+      return { face, obj };
+    })().catch((e) => { detP = null; throw e; });
+    return detP;
+  }
+  function makeCanvas(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+  function crop(src, x, y, w, h, scale) {
+    const c = makeCanvas(w * scale, h * scale);
+    c.getContext("2d").drawImage(src, x, y, w, h, 0, 0, c.width, c.height);
+    return c;
+  }
+  async function detectSensitive(src) {
+    const { face, obj } = await loadDetectors();
+    const W = src.width, H = src.height, out = [], persons = [];
+    const add = (x, y, w, h, kind) => {
+      const x0 = Math.max(0, x), y0 = Math.max(0, y), x1 = Math.min(W, x + w), y1 = Math.min(H, y + h);
+      if (x1 - x0 > 4 && y1 - y0 > 4) out.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, kind, auto: true });
+    };
+    const od = obj.detect(src);
+    for (const d of od.detections || []) {
+      const c = d.categories && d.categories[0], bb = d.boundingBox;
+      if (!c || !bb) continue;
+      const n = c.categoryName;
+      if (n === "person") { persons.push(bb); const hh = bb.height * 0.27; add(bb.originX - bb.width * 0.1, bb.originY - hh * 0.12, bb.width * 1.2, hh * 1.2, "kafa"); }
+      else if (n === "motorcycle") add(bb.originX - bb.width * 0.03, bb.originY + bb.height * 0.32, bb.width * 1.06, bb.height * 0.7, "plaka");
+      else add(bb.originX - bb.width * 0.02, bb.originY + bb.height * 0.48, bb.width * 1.04, bb.height * 0.54, "plaka");
+    }
+    const faces = [];
+    const runFace = (cnv, ox, oy, scale) => {
+      const r = face.detect(cnv);
+      for (const d of r.detections || []) { const bb = d.boundingBox; if (bb) faces.push({ x: ox + bb.originX / scale, y: oy + bb.originY / scale, w: bb.width / scale, h: bb.height / scale }); }
+    };
+    runFace(src, 0, 0, 1);
+    const tw = Math.round(W * 0.6), th = Math.round(H * 0.6);
+    for (const [tx, ty] of [[0, 0], [W - tw, 0], [0, H - th], [W - tw, H - th]]) runFace(crop(src, tx, ty, tw, th, 1.5), tx, ty, 1.5);
+    for (const bb of persons.slice(0, 10)) {
+      const cw = bb.width, ch = bb.height * 0.5;
+      if (cw < 10 || ch < 10) continue;
+      const scale = Math.min(5, 320 / Math.max(cw, ch));
+      runFace(crop(src, Math.max(0, bb.originX), Math.max(0, bb.originY), Math.min(cw, W - bb.originX), Math.min(ch, H - bb.originY), scale), Math.max(0, bb.originX), Math.max(0, bb.originY), scale);
+    }
+    for (const f of faces) add(f.x - f.w * 0.3, f.y - f.h * 0.4, f.w * 1.6, f.h * 1.7, "yuz");
+    return out;
+  }
+  function pixelate(ctx, src, b) {
+    const x = Math.round(b.x), y = Math.round(b.y), w = Math.max(1, Math.round(b.w)), h = Math.max(1, Math.round(b.h));
+    const bs = Math.max(7, Math.round(Math.min(w, h) / 6));
+    const t = makeCanvas(Math.ceil(w / bs), Math.ceil(h / bs));
+    const tc = t.getContext("2d"); tc.imageSmoothingEnabled = true; tc.drawImage(src, x, y, w, h, 0, 0, t.width, t.height);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(t, 0, 0, t.width, t.height, x, y, w, h); ctx.imageSmoothingEnabled = true;
+  }
+  function renderCensored(target, outlines) {
+    const src = D.src; target.width = src.width; target.height = src.height;
+    const ctx = target.getContext("2d");
+    ctx.drawImage(src, 0, 0);
+    for (const b of D.boxes) pixelate(ctx, src, b);
+    const k = Math.max(1, src.width / 900);
+    for (const b of D.boxes) {
+      if (b.w < 46 * k || b.h < 20 * k) continue;
+      ctx.font = `600 ${Math.round(10 * k)}px ui-monospace, Menlo, monospace`;
+      const tw = ctx.measureText("KVKK").width + 8 * k;
+      ctx.fillStyle = "rgba(20,20,20,.78)"; ctx.fillRect(b.x + 3 * k, b.y + 3 * k, tw, 15 * k);
+      ctx.fillStyle = "#F3C300"; ctx.fillText("KVKK", b.x + 7 * k, b.y + 14 * k);
+    }
+    if (outlines) {
+      ctx.lineWidth = 2 * k; ctx.setLineDash([6 * k, 4 * k]);
+      for (const b of D.boxes) { ctx.strokeStyle = b.auto ? "#E8560B" : "#1F5F86"; ctx.strokeRect(b.x, b.y, b.w, b.h); }
+      ctx.setLineDash([]);
+    }
+  }
+  const pv = $("#pv");
+  function paintPreview(temp) {
+    if (!D.src) return;
+    renderCensored(pv, true);
+    if (temp) { const ctx = pv.getContext("2d"), k = Math.max(1, D.src.width / 900); ctx.lineWidth = 2 * k; ctx.strokeStyle = "#1F5F86"; ctx.setLineDash([6 * k, 4 * k]); ctx.strokeRect(temp.x, temp.y, temp.w, temp.h); ctx.setLineDash([]); }
+    $("#btnUndo").disabled = !D.undo.length;
+  }
+  function censorSummary() {
+    const c = { yuz: 0, kafa: 0, plaka: 0, elle: 0 };
+    for (const b of D.boxes) c[b.kind] = (c[b.kind] || 0) + 1;
+    const parts = [];
+    if (c.yuz + c.kafa) parts.push(`${c.yuz + c.kafa} yüz/kişi`);
+    if (c.plaka) parts.push(`${c.plaka} araç plakası bölgesi`);
+    if (c.elle) parts.push(`${c.elle} elle eklenen alan`);
+    return parts.length ? parts.join(", ") + " sansürlendi." : "Sansürlenecek yüz ya da plaka bulunamadı.";
+  }
+  function invalidateExport() { D.sig = null; if (D.mode === "ai") { D.res = null; D.mode = null; $("#result").hidden = true; setStatus("#aStatus", "Fotoğraf değişti; bilirkişiye yeniden gönderebilirsin."); } }
+
+  async function loadBitmap(file) {
+    if (window.createImageBitmap) { try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) {} }
+    return await new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => res(im); im.onerror = () => { URL.revokeObjectURL(u); rej(new Error("decode")); }; im.src = u; });
+  }
+  async function takeFile(file, viaCamera) {
+    if (!file) return;
+    if (file.type && !/^image\//.test(file.type)) { setStatus("#cStatus", "Bu bir fotoğraf dosyası değil.", "err"); return; }
+    resetPhotoOnly();
+    setStatus("#cStatus", "Fotoğraf hazırlanıyor…");
+    let bmp;
+    try { bmp = await loadBitmap(file); } catch (e) { setStatus("#cStatus", "Bu fotoğraf açılamadı. Başka bir fotoğraf dene.", "err"); return; }
+    const w = bmp.naturalWidth || bmp.width, h = bmp.naturalHeight || bmp.height, k = Math.min(1, 1280 / Math.max(w, h));
+    const src = makeCanvas(w * k, h * k); src.getContext("2d").drawImage(bmp, 0, 0, src.width, src.height);
+    if (bmp.close) bmp.close();
+    D.src = src; D.viaCamera = !!viaCamera; D.photoAt = Date.now(); D.boxes = []; D.undo = [];
+    $("#pvBox").hidden = false; $("#cTools").hidden = false; $("#cHelp").hidden = false;
+    paintPreview();
+    await runDetection();
+    if (!D.gps) requestGps(true);
+  }
+  function resetPhotoOnly() { D.res = null; D.mode = null; D.sig = null; $("#result").hidden = true; $("#resWarn").hidden = true; $("#fOk").checked = false; setStatus("#aStatus", ""); }
+  async function runDetection() {
+    if (!D.src) return;
+    $("#pvBox").classList.add("scanning");
+    setStatus("#cStatus", detP ? "Yüzler ve plakalar aranıyor…" : "Sansür modeli yükleniyor (ilk seferde birkaç MB, sonra telefonunda kalır)…");
+    await new Promise((r) => setTimeout(r, 40));
+    try {
+      const found = await detectSensitive(D.src);
+      D.boxes = D.boxes.filter((b) => !b.auto).concat(found);
+      D.detectOk = true;
+      setStatus("#cStatus", censorSummary() + " Sansürsüz fotoğraf telefonundan çıkmaz.", "ok");
+    } catch (e) {
+      D.detectOk = false;
+      setStatus("#cStatus", "Otomatik sansür bu cihazda çalışmadı. Yüz ya da plaka varsa üzerine kutu çizerek sansürle.", "err");
+    }
+    $("#pvBox").classList.remove("scanning");
+    paintPreview();
+  }
+  $("#fCam").addEventListener("change", (e) => takeFile(e.target.files && e.target.files[0], true));
+  $("#fGal").addEventListener("change", (e) => takeFile(e.target.files && e.target.files[0], false));
+  $("#btnRedetect").addEventListener("click", runDetection);
+  $("#btnUndo").addEventListener("click", () => {
+    const u = D.undo.pop(); if (!u) return;
+    if (u.type === "add") D.boxes = D.boxes.filter((b) => b !== u.box); else D.boxes.splice(Math.min(u.index, D.boxes.length), 0, u.box);
+    paintPreview(); invalidateExport(); setStatus("#cStatus", censorSummary(), "ok");
+  });
+  // elle sansür: sürükle = kutu ekle, dokun = kutuyu kaldır
+  let drag = null;
+  const toImg = (e) => { const r = pv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (pv.width / r.width), y: (e.clientY - r.top) * (pv.height / r.height) }; };
+  pv.addEventListener("pointerdown", (e) => { if (!D.src) return; pv.setPointerCapture(e.pointerId); const p = toImg(e); drag = { x0: p.x, y0: p.y, x1: p.x, y1: p.y }; });
+  pv.addEventListener("pointermove", (e) => { if (!drag) return; const p = toImg(e); drag.x1 = p.x; drag.y1 = p.y; paintPreview({ x: Math.min(drag.x0, drag.x1), y: Math.min(drag.y0, drag.y1), w: Math.abs(drag.x1 - drag.x0), h: Math.abs(drag.y1 - drag.y0) }); });
+  pv.addEventListener("pointerup", (e) => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    const w = Math.abs(d.x1 - d.x0), h = Math.abs(d.y1 - d.y0), tapTol = pv.width / 60;
+    if (w < tapTol && h < tapTol) {
+      for (let i = D.boxes.length - 1; i >= 0; i--) {
+        const b = D.boxes[i];
+        if (d.x0 >= b.x && d.x0 <= b.x + b.w && d.y0 >= b.y && d.y0 <= b.y + b.h) { D.boxes.splice(i, 1); D.undo.push({ type: "remove", box: b, index: i }); toast("Sansür kaldırıldı. Geri almak için Geri al."); break; }
+      }
+    } else if (w > 8 && h > 8) {
+      const box = { x: Math.min(d.x0, d.x1), y: Math.min(d.y0, d.y1), w, h, kind: "elle", auto: false };
+      D.boxes.push(box); D.undo.push({ type: "add", box });
+    }
+    paintPreview(); invalidateExport(); setStatus("#cStatus", censorSummary(), "ok");
+  });
+  pv.addEventListener("pointercancel", () => { drag = null; paintPreview(); });
+
+  async function canvasJpeg(c, maxSide, q, maxChars) {
+    let side = maxSide, url = "";
+    for (let i = 0; i < 10; i++) {
+      const k = Math.min(1, side / Math.max(c.width, c.height));
+      const t = makeCanvas(c.width * k, c.height * k); t.getContext("2d").drawImage(c, 0, 0, t.width, t.height);
+      url = t.toDataURL("image/jpeg", q);
+      if (url.length <= maxChars) return url;
+      if (q > 0.52) q -= 0.06; else side = Math.round(side * 0.85);
+    }
+    return url;
+  }
+  // Sunucu sınırları: büyük foto 300K, küçük foto 64K, bilirkişi fotoğrafı 240K karakter (base64)
+  async function exportImages() {
+    const out = makeCanvas(1, 1); renderCensored(out, false);
+    const full = await canvasJpeg(out, 1080, 0.72, 260000);   // ~190 KB; foto veritabanında yer verimi için
+    const thumb = await canvasJpeg(out, 360, 0.6, 40000);     // listede 12'li paketlerle gelir; küçük tutulur
+    if (!safeImg(full) || full.length > 300000 || !safeImg(thumb) || thumb.length > 64000) throw new Error("Fotoğraf hazırlanamadı. Başka bir fotoğrafla dene.");
+    return { full, thumb };
+  }
+  async function exportAi() {
+    const out = makeCanvas(1, 1); renderCensored(out, false);
+    return canvasJpeg(out, 896, 0.72, 225000);
+  }
+
+  /* --- 02: konum --- */
+  let pickMap = null, pickMarker = null;
+  function initPickMap() {
+    if (pickMap || !window.maplibregl) return;
+    pickMap = new maplibregl.Map({ container: "pickMap", style: MAP_STYLE, center: IZMIR, zoom: 11, attributionControl: { compact: true } });
+    pickMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    pickMarker = new maplibregl.Marker({ color: "#E8560B", draggable: true });
+    pickMarker.on("dragend", () => { const ll = pickMarker.getLngLat(); setPin(ll.lng, ll.lat, "drag"); });
+    pickMap.on("click", (e) => setPin(e.lngLat.lng, e.lngLat.lat, "tap"));
+  }
+  let geoTimer = 0;
+  function setPin(lng, lat, why) {
+    if (D.gps && why !== "gps") {
+      const d = dist([lng, lat], [D.gps.lng, D.gps.lat]);
+      if (d > PIN_RADIUS) {
+        toast(`Pin, paylaştığın konuma en fazla ${PIN_RADIUS} m uzak olabilir.`);
+        if (D.pin) pickMarker.setLngLat([D.pin.lng, D.pin.lat]);
+        return;
+      }
+    }
+    D.pin = { lng, lat };
+    if (pickMarker) { pickMarker.setLngLat([lng, lat]); if (!D.markerAdded) { pickMarker.addTo(pickMap); D.markerAdded = true; } }
+    if (!D.ilceTouched || !sel.value) sel.value = nearestDistrict(lng, lat);
+    clearTimeout(geoTimer); geoTimer = setTimeout(() => reverseGeocode(lng, lat), why === "drag" || why === "tap" ? 350 : 0);
+    updateVerifyNote();
+    nearCheck(lng, lat);
+  }
+  // Aynı çöp için ikinci tutanak yerine tanıklık önerilir (harita kalabalıklaşmasın, sayılar şişmesin)
+  function nearCheck(lng, lat) {
+    const box = $("#nearHint"), now = Date.now();
+    let best = null, bd = 31;
+    for (const q of S.posts) {
+      if (q.status !== "orada" || now - q.created_at > 14 * 86400000) continue;
+      if (Math.abs(q.lat - lat) > 0.0005 || Math.abs(q.lng - lng) > 0.0006) continue;
+      const d = dist([lng, lat], [q.lng, q.lat]);
+      if (d < bd) { bd = d; best = q; }
+    }
+    if (!best) { box.hidden = true; box.textContent = ""; return; }
+    box.hidden = false;
+    box.innerHTML = `${Math.max(1, Math.round(bd))} m yakında son iki haftada açılmış bir tutanak var (%${best.pct}). Aynı çöpse yenisini açmak yerine <button type="button" class="btn-ghost" id="nearOpen" style="padding:4px 10px;font-size:13px">o tutanağa tanık ol</button>`;
+    $("#nearOpen").onclick = () => { closeSheet(); openDetail(best.id); };
+  }
+  async function reverseGeocode(lng, lat) {
+    try {
+      const a = await api(`/api/adres?lat=${lat.toFixed(5)}&lng=${lng.toFixed(5)}`);
+      if (a.ilce && !D.ilceTouched) sel.value = a.ilce;
+      if (a.mahalle) $("#fMah").value = a.mahalle;
+      if (a.sokak) $("#fSok").value = a.sokak;
+      D.addrFilled = true;
+      updateVerifyNote([a.sokak, a.mahalle ? a.mahalle + " Mah." : "", a.ilce || sel.value].filter(Boolean).join(", "));
+    } catch (e) { updateVerifyNote(null, "Adres otomatik bulunamadı; mahalle ve sokağı elle yazabilirsin."); }
+  }
+  function requestGps(auto) {
+    if (!navigator.geolocation) { setStatus("#gStatus", "Bu tarayıcı konum paylaşmayı desteklemiyor. Çöpün yerini haritada işaretle.", "err"); return; }
+    setStatus("#gStatus", "Konum alınıyor…");
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      if (!(lat > 37.75 && lat < 39.45 && lng > 25.95 && lng < 28.65)) { setStatus("#gStatus", "Konumun İzmir dışında görünüyor. Çöpün yerini haritada işaretle.", "err"); return; }
+      D.gps = { lat, lng, acc: accuracy, at: Date.now() };
+      initPickMap();
+      if (pickMap) pickMap.jumpTo({ center: [lng, lat], zoom: 16.5 });
+      setPin(lng, lat, "gps");
+    }, (err) => {
+      setStatus("#gStatus", auto ? "Konum izni verilmedi. Konumumu paylaş düğmesiyle tekrar deneyebilir ya da çöpün yerini haritada işaretleyebilirsin." : "Konum alınamadı. İzin verdiğinden emin ol ya da çöpün yerini haritada işaretle; tutanak doğrulanmamış olarak yayınlanır.", "err");
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  }
+  function isVerified() {
+    if (!D.gps || !D.pin || !D.viaCamera) return false;
+    if (!matchMedia("(pointer: coarse)").matches) return false;
+    if (D.gps.acc > 120) return false;
+    if (dist([D.pin.lng, D.pin.lat], [D.gps.lng, D.gps.lat]) > 150) return false;
+    return Math.abs(D.photoAt - D.gps.at) < 15 * 60000;
+  }
+  function updateVerifyNote(addr, errText) {
+    if (!D.pin) return;
+    let t = addr ? "Adres: " + addr + ". " : "";
+    if (errText) t += errText + " ";
+    if (D.gps) t += `GPS ±${Math.round(D.gps.acc)} m. ` + (isVerified() ? "Tutanak Yerinde tespit damgası alacak." : D.viaCamera ? "" : "Yerinde tespit damgası için fotoğrafı Fotoğraf çek ile çek.");
+    else t += "Konum elle işaretlendi; tutanak doğrulanmamış olarak yayınlanır.";
+    setStatus("#gStatus", t.trim(), errText ? "err" : "ok");
+  }
+  $("#btnGps").addEventListener("click", () => requestGps(false));
+
+  /* --- 03: bilirkişi --- */
+  function showResult(res, mode) {
+    D.res = res; D.mode = mode;
+    $("#result").hidden = false;
+    $("#fPct").value = String(res.yuzde);
+    $("#fPctLabel").textContent = mode === "ai" ? "Bilirkişiye itiraz et" : "Göz kararı çöp yüzdesi";
+    $("#resWarn").hidden = !res.kisiVeyaPlaka;
+    if (res.kisiVeyaPlaka) $("#fOk").checked = false;
+    paintResult();
+  }
+  function paintResult() {
+    const r = D.res; if (!r) return;
+    const si = stageIdx(r.yuzde);
+    $("#res").className = "res s" + si;
+    $("#resStamp").innerHTML = `%${r.yuzde}<small>ÇÖP</small>`;
+    $("#resStage").textContent = STAGE_NAMES[si] + (D.mode === "ai" && r.yuzde !== D.aiYuzde ? " · itirazlı" : "");
+    $("#resTitle").textContent = r.baslik;
+    $("#resComment").textContent = r.yorum;
+    $("#resChips").innerHTML = (r.tespitler || []).map((t) => `<li>${esc(t)}</li>`).join("");
+    $("#fPctOut").textContent = "%" + r.yuzde;
+  }
+  $("#fPct").addEventListener("input", (e) => {
+    if (!D.res) return;
+    const y = clampPct(e.target.value); D.res.yuzde = y;
+    if (D.mode === "manual") { const t = template(y); D.res.baslik = t.baslik; D.res.yorum = t.yorum; }
+    paintResult();
+  });
+  $("#btnManual").addEventListener("click", () => {
+    if (!D.src) { setStatus("#aStatus", "Önce fotoğrafı seç.", "err"); return; }
+    const y = D.res ? D.res.yuzde : 50, t = template(y);
+    showResult({ yuzde: y, baslik: t.baslik, yorum: t.yorum, tespitler: [], kisiVeyaPlaka: false }, "manual");
+    setStatus("#aStatus", "");
+  });
+  $("#btnAnalyze").addEventListener("click", async () => {
+    if (!D.src) { setStatus("#aStatus", "Önce fotoğrafı seç.", "err"); return; }
+    if (D.busy) return;
+    D.busy = true; $("#btnAnalyze").disabled = true;
+    let i = 0; setStatus("#aStatus", LOADING[0]);
+    clearInterval(D.lineTimer); D.lineTimer = setInterval(() => { i = (i + 1) % LOADING.length; setStatus("#aStatus", LOADING[i]); }, 1800);
+    try {
+      const image = await exportAi();
+      const r = await api("/api/analyze", { image, ilce: sel.value, mahalle: $("#fMah").value, sokak: $("#fSok").value, ts: await tsToken() });
+      D.aiYuzde = clampPct(r.yuzde); D.sig = r.sig || null; D.sigExp = Number(r.exp) || 0;
+      showResult({ yuzde: D.aiYuzde, baslik: r.baslik, yorum: r.yorum, tespitler: r.tespitler || [], kisiVeyaPlaka: !!r.kisiVeyaPlaka }, "ai");
+      D.aiOrig = { baslik: r.baslik, yorum: r.yorum, tespitler: r.tespitler || [] };
+      setStatus("#aStatus", r.copDegil ? "Bilirkişi bu fotoğrafta çöp göremedi. Yine de yayınlayabilirsin." : "", r.copDegil ? "err" : "");
+    } catch (e) {
+      setStatus("#aStatus", e.message || "Bilirkişiye ulaşılamadı. Göz kararı girebilirsin.", "err");
+    } finally {
+      clearInterval(D.lineTimer); D.busy = false; $("#btnAnalyze").disabled = false;
+    }
+  });
+
+  /* --- 04: yayınla --- */
+  $("#btnPublish").addEventListener("click", async () => {
+    const fail = (t) => setStatus("#pStatus", t, "err");
+    if (!D.src) return fail("Önce fotoğrafı seç.");
+    if (!D.pin) return fail("Konumunu paylaş ya da çöpün yerini haritada işaretle.");
+    if (!sel.value) return fail("İlçeyi seç.");
+    if (!D.res) return fail("Çöp yüzdesini belirle: bilirkişiye gönder ya da göz kararı gir.");
+    if (!$("#fOk").checked) return fail("Fotoğrafı kontrol ettiğini onayla.");
+    const btn = $("#btnPublish"); btn.disabled = true;
+    setStatus("#pStatus", "Tutanak mühürleniyor…");
+    try {
+      const { full, thumb } = await exportImages();
+      const ai = D.mode === "ai" && D.sig && D.aiOrig;
+      const meta = {
+        lat: D.pin.lat, lng: D.pin.lng, ilce: sel.value,
+        mahalle: $("#fMah").value.trim(), sokak: $("#fSok").value.trim(), tarif: $("#fTarif").value.trim(),
+        yuzde: D.res.yuzde, sansur: D.boxes.length, dogrulandi: isVerified()
+      };
+      if (ai) Object.assign(meta, { aiYuzde: D.aiYuzde, baslik: D.aiOrig.baslik, yorum: D.aiOrig.yorum, tespitler: D.aiOrig.tespitler, sig: D.sig, sigExp: D.sigExp });
+      meta.ts = await tsToken();
+      const fd = new FormData();
+      fd.append("meta", JSON.stringify(meta)); fd.append("full", full); fd.append("thumb", thumb);
+      const r = await api("/api/posts", fd);
+      const p = normPost(r.post); p.mine = true;
+      CARD.set(p.id, r.post);
+      setPosts([p].concat(S.posts.filter((x) => x.id !== p.id)));
+      S.filter = null; S.sort = "yeni"; S.shown = PAGE;
+      resetSheet(); closeSheet(); renderAll();
+      if (map) map.flyTo({ center: [p.lng, p.lat], zoom: 15.5 });
+      openDetail(p.id);
+      toast("Tutanak yayında. Paylaş ki mahalle görsün.");
+    } catch (e) {
+      if (e.code === "kopya" && e.data && e.data.id && S.byId.has(e.data.id)) {
+        const id = e.data.id; resetSheet(); closeSheet(); openDetail(id);
+        toast("Bu fotoğraf zaten bildirilmiş. Aynı çöpse Ben de gördüm diyerek tanık olabilirsin.", 5200);
+      } else fail(e.message);
+    }
+    finally { btn.disabled = false; }
+  });
+
+  /* ---------- telefona yükle (ana ekrana ekle) ---------- */
+  const UA = navigator.userAgent;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const inApp = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Twitter|LinkedInApp|Line\//i.test(UA);
+  let installEvt = null;
+  const btnInstall = $("#btnInstall");
+  const showInstall = () => { if (!standalone) btnInstall.hidden = false; };
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; showInstall(); });
+  window.addEventListener("appinstalled", () => { installEvt = null; btnInstall.hidden = true; closeDlg($("#installHelp")); toast("Çöpİzmir ana ekranına eklendi."); });
+  if (isIOS || inApp) showInstall();
+  function installSteps() {
+    if (inApp) return [
+      "Bu sayfa Instagram ya da başka bir uygulamanın içinde açıldı; oradan yüklenemiyor.",
+      "Sağ üstteki <b>•••</b> menüsüne dokun ve <b>Tarayıcıda aç</b>'ı seç.",
+      isIOS ? "Safari'de alttaki <b>Paylaş</b> simgesine, sonra <b>Ana Ekrana Ekle</b>'ye dokun." : "Chrome'da <b>Uygulamayı yükle</b>'yi ya da <b>Ana ekrana ekle</b>'yi seç."
+    ];
+    if (isIOS) return [
+      "Bu sayfayı <b>Safari</b>'de aç (Chrome'da da Paylaş menüsü aynı işi görür).",
+      "Alttaki <b>Paylaş</b> simgesine dokun (yukarı ok çıkan kare).",
+      "Listeden <b>Ana Ekrana Ekle</b>'yi seç, sonra <b>Ekle</b>'ye dokun."
+    ];
+    return [
+      "Tarayıcının menüsünü aç (sağ üstteki <b>⋮</b>).",
+      "<b>Uygulamayı yükle</b>'yi ya da <b>Ana ekrana ekle</b>'yi seç.",
+      "<b>Yükle</b>'ye dokun; Çöpİzmir ana ekranına gelir."
+    ];
+  }
+  async function promptInstall() {
+    if (!installEvt) return false;
+    const ev = installEvt; installEvt = null;
+    ev.prompt();
+    const r = await ev.userChoice.catch(() => null);
+    if (r && r.outcome === "accepted") { btnInstall.hidden = true; closeDlg($("#installHelp")); }
+    return true;
+  }
+  function openInstallHelp() {
+    // Tarayıcı doğrudan yüklemeye izin veriyorsa tek düğme yeter; vermiyorsa adımlar gösterilir.
+    $("#ihGoRow").hidden = !installEvt;
+    $("#ihSteps").hidden = !!installEvt;
+    $("#ihSteps").innerHTML = installSteps().map((t) => `<li><span>${t}</span></li>`).join("");
+    openDlg($("#installHelp"));
+    setTimeout(() => (installEvt ? $("#ihGo") : $("#ihClose")).focus(), 30);
+  }
+  // Sitedeki ortak "İndir" penceresi (/assets/bk-app.js) varsa o açılır; yoksa uygulamanın kendi penceresi.
+  if (!standalone) btnInstall.hidden = false;
+  btnInstall.addEventListener("click", async () => {
+    if (window.BKApp) { window.BKApp.install(); return; }
+    if (!(await promptInstall())) openInstallHelp();
+  });
+  $("#ihGo").addEventListener("click", () => promptInstall());
+  // berkay.instaassist.tr'deki "İndir" düğmesi buraya ?yukle=1 ile gelir: yükleme penceresi kendiliğinden açılır.
+  // Sitede bk-app.js varsa ?yukle=1'i o okur ve kendi penceresini açar; adresi burada silme.
+  const hubSheet = !!document.querySelector('script[src*="bk-app.js"]');
+  if (!hubSheet && /[?&]yukle=1\b/.test(location.search) && !standalone) {
+    setTimeout(() => { if ($("#sheet").hidden && $("#detail").hidden) openInstallHelp(); }, 1200);
+    try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}
+  }
+  $("#ihClose").addEventListener("click", () => closeDlg($("#installHelp")));
+  $("#installHelp").addEventListener("click", (e) => { if (e.target.id === "installHelp") closeDlg($("#installHelp")); });
+  // Servis çalışanını /assets/bk-app.js kaydeder (data-sw="sw.js").
+
+  /* ---------- start ---------- */
+  initMap();
+  loadPosts();
+  // Akış sunucuda en sık 20 sn'de bir yenilenir; ziyaretçi başına 3 dakikada bir sormak yeterli.
+  setInterval(() => { if (document.visibilityState === "visible" && $("#sheet").hidden) loadPosts(); }, 180000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && $("#sheet").hidden && Date.now() - S.lastLoad > 90000) loadPosts();
+  });
+})();
+</script>
+</body>
+</html>
