@@ -35,7 +35,7 @@
   <section class="rp-hero">
     <p class="rp-kicker">Seri</p>
     <h1>Faydalı Repolar</h1>
-    <p>GitHub'da bulup kendi bilgisayarımda denediğim, işe yarayan ücretsiz açık kaynak araçlar. Videoda gördüğün repo burada, indirme linkiyle.</p>
+    <p>GitHub'da bulup kendi bilgisayarımda denediğim ve kendi yaptığım, işe yarayan ücretsiz açık kaynak araçlar. Videoda gördüğün repo burada, indirme linkiyle.</p>
   </section>
 
   <div class="rp-list" id="list"></div>
@@ -53,6 +53,27 @@
 (function () {
   // Yeni bölüm eklemek için bu listeye bir kayıt ekle (en yeni en üste)
   var REPOS = [
+    {
+      no: 2,
+      id: 'jarvis',
+      link: '/jarvis/',    // paylaşılacak kısa link
+      name: 'Jarvis',
+      own: true,           // benim yaptığım: GitHub/yıldız yerine "Benim yaptığım" etiketi
+      tagline: 'Mac için Türkçe sesli asistan. "Hey Jarvis" de, konuşsun.',
+      what: '"Hey Jarvis" deyince uyanır, Google Gemini Live ile anında sesli cevap verir. Konuşurken sözünü kesebilirsin. Konuşmalarınızı hatırlar, notlarında arar, internette araştırır, istersen ekranına bakar.',
+      bullets: [
+        '"Hey Jarvis"i Mac\'inde, internete çıkmadan yakalar; istersen kendi sesinle eğitirsin, sadece seninle uyanır',
+        'Araçlar: Google ve YouTube araması, web sayfası okuma, not alma, ekrana bakma, internette kendi başına iş yapan tarayıcı ajanı',
+        'Ses diske kaydedilmez, sadece konuşurken Google\'a gider; konuşma dökümleri, notlar ve hafıza senin Mac\'inde kalır',
+        'Ücretsiz ve açık kaynak (MIT)'
+      ],
+      needs: 'Apple Silicon (M1 ve sonrası) Mac, macOS 13 ya da üstü, ücretsiz bir Gemini API anahtarı ve 4 GB boş disk. ZIP\'i aç, Terminal\'de klasöre gir, "bash kur.sh" yaz; kurulum 5 dakika sürer, gerisini README anlatıyor.',
+      downloads: [
+        { os: 'mac', label: 'Jarvis\'i indir', file: 'jarvis-asistan.zip', size: '22 KB', url: '/downloads/jarvis-asistan.zip' }
+      ],
+      score: null,
+      video: ''    // Reels linki
+    },
     {
       no: 1,
       id: 'digup',         // küçük harf, rakam ve tire; panelde bu adla görünür
@@ -91,7 +112,7 @@
     var main = dl[0], rest = dl.slice(1);
     return '<article class="rp-card" id="' + String(r.no).padStart(2, '0') + '">' +
       '<div class="rp-head"><span class="rp-no">#' + String(r.no).padStart(2, '0') + '</span>' +
-        '<span class="rp-stars" data-repo="' + esc(r.repo) + '">★ ' + k(r.stars) + '</span></div>' +
+        (r.own ? '<span class="rp-stars rp-own">Benim yaptığım</span>' : '<span class="rp-stars" data-repo="' + esc(r.repo) + '">★ ' + k(r.stars) + '</span>') + '</div>' +
       '<h2>' + esc(r.name) + '</h2>' +
       '<p class="lead">' + esc(r.tagline) + '</p>' +
       '<p>' + esc(r.what) + '</p>' +
@@ -103,25 +124,32 @@
       '<div class="rp-dl">' +
         '<a class="btn signal" href="' + esc(main.url) + '" rel="noopener" data-rp="' + r.id + '" data-t="download-' + main.os + '">' + esc(main.label) + '</a>' +
         '<p class="rp-file">' + esc(main.file) + (main.size ? ' · ' + esc(main.size) : '') + '</p>' +
-        '<p class="rp-other">' + rest.map(function (d) {
+        ((rest.length || r.releases) ? '<p class="rp-other">' + rest.map(function (d) {
           return '<a href="' + esc(d.url) + '" rel="noopener" data-rp="' + r.id + '" data-t="download-' + d.os + '">' + esc(d.label) + '</a>';
-        }).join(' · ') + ' · <a href="' + esc(r.releases) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="releases">Tüm sürümler</a></p>' +
+        }).concat(r.releases ? ['<a href="' + esc(r.releases) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="releases">Tüm sürümler</a>'] : []).join(' · ') + '</p>' : '') +
       '</div>' +
-      '<div class="rp-actions">' +
+      ((r.video || r.repo) ? '<div class="rp-actions">' +
         (r.video ? '<a class="btn ghost" href="' + esc(r.video) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="video">Videoyu izle</a>' : '') +
-        '<a class="btn ghost" href="https://github.com/' + esc(r.repo) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="github">GitHub\'da gör</a>' +
-      '</div>' +
-      '<p class="rp-src">Dosyalar geliştiricinin resmi GitHub sürümlerinden iner; ben sadece doğru linki buraya koyuyorum.</p>' +
+        (r.repo ? '<a class="btn ghost" href="https://github.com/' + esc(r.repo) + '" target="_blank" rel="noopener" data-rp="' + r.id + '" data-t="github">GitHub\'da gör</a>' : '') +
+      '</div>' : '') +
+      '<p class="rp-src">' + (r.own ? 'Kodun tamamı ZIP\'in içinde, açıp okuyabilirsin. MIT lisanslı: kullan, değiştir, paylaş.' : 'Dosyalar geliştiricinin resmi GitHub sürümlerinden iner; ben sadece doğru linki buraya koyuyorum.') + '</p>' +
     '</article>';
   }).join('');
 
   el.addEventListener('click', function (e) {
     var b = e.target.closest('[data-share]'); if (!b) return;
-    var url = location.origin + '/repolar/#' + String(b.getAttribute('data-share')).padStart(2, '0');
+    var no = Number(b.getAttribute('data-share')), r = REPOS.filter(function (x) { return x.no === no; })[0] || {};
+    var url = location.origin + (r.link || '/repolar/#' + String(no).padStart(2, '0'));
     B.track('repolar', 'share');
-    if (navigator.share) { navigator.share({ title: 'DigUp · Faydalı Repolar', url: url }).catch(function () {}); }
+    if (navigator.share) { navigator.share({ title: (r.name || 'Faydalı Repolar') + ' · Faydalı Repolar', url: url }).catch(function () {}); }
     else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { b.textContent = 'Link kopyalandı ✓'; }); }
   });
+
+  // /repolar/#02 gibi linklerle gelince o karta kaydır (kartlar JS ile çizildiği için elle)
+  if (location.hash) {
+    var hedef = document.getElementById(location.hash.slice(1));
+    if (hedef) setTimeout(function () { hedef.scrollIntoView({ block: 'start' }); hedef.classList.add('rp-hl'); }, 60);
+  }
 
   // İsimsiz sayaç: sayfa görüntüleme (oturumda bir kez) ve hangi repoda neye basıldığı.
   // Kayıt adı repo-<id> (id sadece küçük harf ve tire); panel bunları "Faydalı Repolar" altında gösterir.

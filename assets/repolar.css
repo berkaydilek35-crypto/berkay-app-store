@@ -40,3 +40,5 @@
 .rp-mobile .btn{justify-self:start;color:var(--paper);border-color:var(--paper)}
 .rp-src{font-size:13.5px;color:var(--muted)}
 .rp-note{margin:28px 0 10px;max-width:60ch;font-size:14.5px;color:var(--muted)}
+.rp-own{background:var(--signal);color:var(--ink)}
+.rp-card.rp-hl{box-shadow:0 0 0 4px var(--signal)}
