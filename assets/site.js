@@ -28,10 +28,10 @@
     testNote: 'Saha Testi 001, ilk sürüm. Tamamen tarayıcıda çalışıyor: yazdığın metin cihazından çıkmıyor, kayıt ya da hesap yok. Video telefonda/bilgisayarda üretilip indiriliyor. Ana ekrana ekleyince internetsiz de çalışıyor.'
   }, {
     title: 'Çöpİzmir', slug: 'copizmir', tagline: 'İzmir\'in çöpleri bir haritaya dökülüyor.',
-    category: 'Şehir', status: 'Yakında', testNumber: 2, featuredOrder: 2, coverImage: '/assets/apps/copizmir/teaser.jpg'
+    category: 'Şehir', status: 'Canlı', testNumber: 2, featuredOrder: 1, appUrl: '/apps/copizmir/index.html', coverImage: '/assets/apps/copizmir/teaser.jpg'
   }, {
     title: 'Semt Ligi', slug: 'semt-ligi', tagline: 'Mahalleler arası spor ligi. Senin semtin kaçıncı?',
-    category: 'Spor', status: 'Yakında', testNumber: 3, featuredOrder: 3, coverImage: '/assets/apps/semt-ligi/teaser.jpg'
+    category: 'Spor', status: 'Canlı', testNumber: 3, featuredOrder: 0, appUrl: '/apps/semt-ligi/', coverImage: '/assets/apps/semt-ligi/teaser.jpg'
   }];
 
   var hasDOM = typeof document !== 'undefined';

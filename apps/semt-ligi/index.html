@@ -29,6 +29,11 @@
         height: 100%;
         flex: 1;
       }
+      /* Bilgisayarda telefon genişliğinde ortada dursun */
+      @media (min-width: 640px) {
+        html, body { background-color: #05070a; }
+        #root { max-width: 460px; margin: 0 auto; background-color: #0b0d10; box-shadow: 0 0 0 1px #1b1f26; }
+      }
     </style>
   <link rel="icon" href="/apps/semt-ligi/favicon.ico"/></head>
 
