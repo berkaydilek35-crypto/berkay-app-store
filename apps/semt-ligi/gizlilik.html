@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semt Ligi · Gizlilik Politikası</title>
+<style>
+  :root { --bg:#ffffff; --fg:#14171c; --muted:#5a626e; --line:#e6e8eb; --accent:#5f7d00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b0d10; --fg:#f3f5f7; --muted:#8b94a1; --line:#262b33; --accent:#c8f04a; } }
+  body { background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin:0; }
+  main { max-width:720px; margin:0 auto; padding:40px 20px 64px; }
+  h1 { font-size:30px; margin:0 0 4px; letter-spacing:-.5px; }
+  h2 { font-size:19px; margin:32px 0 8px; }
+  .date, small { color:var(--muted); }
+  .box { border:1px solid var(--line); border-radius:14px; padding:16px 20px; margin:20px 0; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  td, th { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Gizlilik Politikası</h1>
+  <p class="date">Semt Ligi · Son güncelleme: 15 Kasım 2026</p>
+
+  <div class="box">
+    <strong>Kısaca:</strong> Semt Ligi'ni kullanmak için adını, e-postanı ya da telefon numaranı istemiyoruz.
+    Konumunu GPS ile almıyoruz, reklam takibi ve üçüncü taraf analiz araçları kullanmıyoruz.
+    Boyun, kilon ve yaşın sunucumuzda saklanmaz.
+  </div>
+
+  <h2>1. Sunucuda sakladığımız bilgiler</h2>
+  <table>
+    <tr><th>Bilgi</th><th>Neden</th></tr>
+    <tr><td>Seçtiğin kullanıcı adı</td><td>Sıralamada seni göstermek için</td></tr>
+    <tr><td>Kurtarma kodunun şifrelenmiş özeti (hash)</td><td>Hesabına giriş yapabilmen için. Kodun kendisi sunucuda saklanmaz.</td></tr>
+    <tr><td>Cihaz oturum anahtarının şifrelenmiş özeti</td><td>Giriş yaptığın telefonu her seferinde kod sormadan tanımak için. 180 gün kullanılmayan oturumlar silinir.</td></tr>
+    <tr><td>Kişisel puan çarpanı (ör. 1.45)</td><td>Antrenmanlarını adil puanlamak için</td></tr>
+    <tr><td>Listeden seçtiğin il, ilçe ve mahalle</td><td>Mahalle, ilçe ve şehir sıralamaları için</td></tr>
+    <tr><td>Antrenman kayıtların (aktivite türü, süre, tarih, puan)</td><td>Günlük puan, seri ve sıralama hesabı için. Tek tek kayıtlar 14 gün, günlük puan dökümü 60 gün tutulur; sonrasında sadece toplam puanın, en uzun serin ve aktif gün sayın kalır.</td></tr>
+    <tr><td>Uygulamayı en son açtığın gün (sadece tarih)</td><td>Mahalle skorundaki "aktif üye" sayısı ve 12 ay hiç kullanılmayan hesapları otomatik silmek için</td></tr>
+    <tr><td>Bildirim kayıtları (hangi hesabın hangi hesabı bildirdiği)</td><td>Uygunsuz kullanıcı adlarını ve şüpheli puanları gizlemek için</td></tr>
+  </table>
+
+  <h2>2. Sadece telefonunda kalan bilgiler</h2>
+  <p>Boyun, kilon, yaşın ve spor sıklığın telefonunda saklanır. Kayıt olurken ve bilgilerini güncellerken bu değerler
+    puan çarpanını hesaplamak için sunucuya bir kez gönderilir; çarpan hesaplanır ve değerlerin kendisi hiçbir yere
+    kaydedilmez. Kurtarma kodun telefonunun güvenli kasasında (iOS Anahtar Zinciri / Android Keystore) durur ki
+    Profil ekranında tekrar görebilesin. Hatırlatma ayarların ve bildirimlerin de tamamen telefonunda çalışır.</p>
+
+  <h2>3. Kimler neyi görür?</h2>
+  <p>Diğer kullanıcılar sadece kullanıcı adını, puanını ve sıranı görür. Bir mahalle veya ilçe sıralamasında görünmen,
+    o bölgeyi seçtiğin anlamına gelir. Mahalle sıralamasında sadece mahalle adı, üye sayısı ve üye başına ortalama puan
+    görünür; kimin hangi mahallede olduğu ayrıca listelenmez. Boy, kilo, yaş ve çarpan bilgin kimseye gösterilmez.
+    Uygulamada mesajlaşma yoktur.</p>
+
+  <h2>4. Verilerin nerede tutulur?</h2>
+  <p>Veriler, altyapı sağlayıcımız Supabase üzerinde Frankfurt, Almanya (AB) bölgesinde barındırılır.
+    Altyapı sağlayıcısı, güvenlik ve hata takibi amacıyla bağlantı kayıtlarını (ör. IP adresi) sınırlı bir süre
+    tutabilir; bu kayıtlar senin hesabınla eşleştirilmez ve tarafımızca başka amaçla kullanılmaz.
+    Toplu sahte hesap açmayı ve kod denemeyi engellemek için IP adresi ve denenen kullanıcı adı, sadece
+    "kaç deneme yapıldı" sayaçlarında en fazla 1 gün tutulur ve otomatik silinir; hesabınla eşleştirilmez.
+    Verilerin satılmaz, kiralanmaz veya reklam amacıyla paylaşılmaz.</p>
+
+  <h2>5. Verilerini silme</h2>
+  <p>Uygulamada <strong>Profil &rsaquo; Hesabımı sil</strong> adımıyla hesabını ve tüm antrenman, puan ve bildirim
+    kayıtlarını anında ve kalıcı olarak silebilirsin. 12 ay boyunca hiç açılmayan hesaplar da tüm verileriyle
+    birlikte otomatik olarak silinir. Kurtarma kodunu kaybettiysen ve silme talebin varsa
+    Instagram'da <a href="https://www.instagram.com/berkay.builds/">@berkay.builds</a> hesabına kullanıcı adınla mesaj atabilirsin.</p>
+
+  <h2>6. Yaş sınırı</h2>
+  <p>Semt Ligi 13 yaşın altındaki kişilere yönelik değildir ve kayıt sırasında 13 yaş altı hesap oluşturulamaz.</p>
+
+  <h2>7. Sağlık uyarısı</h2>
+  <p>Semt Ligi bir motivasyon ve oyunlaştırma uygulamasıdır; tıbbi tavsiye vermez. Puanlar genel aktivite
+    yoğunluğu değerlerine (MET) dayanan yaklaşık hesaplardır. Bir sağlık sorunun varsa yeni bir egzersize başlamadan
+    önce doktoruna danış.</p>
+
+  <h2>8. Hakların</h2>
+  <p>6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamındaki taleplerin (bilgi alma, düzeltme, silme vb.) için
+    Instagram'da <a href="https://www.instagram.com/berkay.builds/">@berkay.builds</a> hesabından bize ulaşabilirsin. Kimlik bilgisi
+    tutmadığımız için talebini kullanıcı adınla birlikte iletmen yeterlidir.</p>
+
+  <h2>9. Değişiklikler</h2>
+  <p>Bu politikayı güncellersek bu sayfadaki tarihi değiştiririz. Önemli değişiklikleri uygulama içinden duyururuz.</p>
+
+  <h2>İletişim</h2>
+  <p>Berkay Dilek · Instagram: <a href="https://www.instagram.com/berkay.builds/">@berkay.builds</a></p>
+
+  <hr style="border:none;border-top:1px solid var(--line);margin:40px 0 16px">
+  <small><strong>English summary:</strong> Semt Ligi does not collect names, emails, phone numbers, GPS location,
+    advertising identifiers or third-party analytics. The server stores only a chosen username, a hash of the
+    recovery code and of device session keys, a scoring multiplier, a user-selected neighbourhood/district/city,
+    the date the app was last opened and workout logs (details kept 14 days, daily breakdown 60 days). IP addresses
+    are used only in short-lived abuse-prevention counters deleted within a day. Accounts unused for 12 months are
+    deleted automatically. Height,
+    weight and age stay on the device and are never stored on the server. Users can permanently delete their
+    account and all data in the app (Profile &rsaquo; Delete account). Not intended for children under 13.</small>
+</main>
+</body>
+</html>
