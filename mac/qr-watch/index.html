@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR Watch — Mac için ekrandaki QR okuyucu · Berkay Napıyor?</title>
+<meta name="description" content="Ekranda QR gördüğünde telefona uzanma: ⇧⌘2'ye bas, QR Watch kodu bulur ve linki bildirim olarak gösterir. Mac için ücretsiz.">
+<meta name="theme-color" content="#17191C">
+<link rel="canonical" href="https://berkay.instaassist.tr/mac/qr-watch/">
+<meta property="og:site_name" content="Berkay Napıyor?">
+<meta property="og:title" content="QR Watch — ekrandaki QR'ı telefonsuz oku">
+<meta property="og:description" content="⇧⌘2'ye bas, link karşında. Mac için ücretsiz.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://berkay.instaassist.tr/mac/qr-watch/">
+<meta property="og:image" content="https://berkay.instaassist.tr/assets/apps/qr-watch/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .kd{padding:8px 0 40px}
+  .kd-hero{display:grid;gap:26px;align-items:center}
+  @media (min-width:900px){.kd-hero{grid-template-columns:1.1fr .9fr;gap:56px;padding:20px 0 30px}}
+  .kd-kicker{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-weight:800;font-stretch:72%;font-size:14px;letter-spacing:.06em;color:var(--ink-2)}
+  .kd-kicker span{background:var(--ink);color:var(--paper);border-radius:6px;padding:4px 8px}
+  .kd-kicker em{font-style:normal;background:var(--signal);color:var(--ink);border-radius:6px;padding:4px 8px}
+  .kd h1{font-weight:880;font-stretch:118%;font-size:clamp(54px,15vw,120px);line-height:.92;letter-spacing:-.045em;margin-top:14px}
+  .kd .lead{font-size:clamp(18px,4.6vw,22px);color:var(--ink-2);max-width:32ch;margin-top:14px}
+  .kd-cta{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:24px}
+  .kd-cta .btn{font-size:19px;padding:18px 26px}
+  .kd-meta{font-size:14px;color:var(--muted);font-weight:600}
+  .kd-mobile{margin-top:16px;padding:14px 16px;border-radius:16px;background:var(--paper-2);font-size:16px;line-height:1.45}
+  .kd-mobile b{white-space:nowrap}
+  .kd-mobile button{margin-top:10px}
+  .kd-video{position:relative;justify-self:center;width:min(100%,380px);aspect-ratio:9/16;border-radius:28px;overflow:hidden;background:var(--ink);box-shadow:0 40px 70px -40px rgba(23,25,28,.7)}
+  .kd-video video{width:100%;height:100%;object-fit:cover;display:block}
+  .kd-sound{position:absolute;right:12px;bottom:12px;border:0;border-radius:999px;padding:10px 14px;font-weight:750;font-size:14px;background:rgba(244,241,233,.92);color:var(--ink);cursor:pointer}
+  .kd h2{font-weight:850;font-stretch:112%;font-size:clamp(28px,7vw,40px);line-height:1;letter-spacing:-.03em;margin:46px 0 16px}
+  .kd-steps{list-style:none;counter-reset:s;display:grid;gap:12px;padding:0}
+  .kd-steps li{counter-increment:s;position:relative;padding:18px 18px 18px 64px;border-radius:18px;background:#fff;border:1px solid var(--line);font-size:17px}
+  .kd-steps li::before{content:counter(s);position:absolute;left:16px;top:16px;width:34px;height:34px;border-radius:50%;background:var(--signal);color:var(--ink);font-weight:900;display:grid;place-items:center;font-size:17px}
+  .kd-steps li b{font-weight:800}
+  .kd-steps li b:first-child{display:block;font-size:18px;margin-bottom:2px}
+  .kd-grid{list-style:none;display:grid;gap:10px;padding:0;grid-template-columns:1fr}
+  @media (min-width:640px){.kd-grid{grid-template-columns:1fr 1fr}}
+  @media (min-width:980px){.kd-grid{grid-template-columns:1fr 1fr 1fr}}
+  .kd-grid li{padding:16px 18px;border-radius:16px;background:var(--ink);color:var(--paper);font-size:16px}
+  .kd-grid li b{display:block;color:var(--signal);font-weight:850;font-stretch:112%;font-size:20px;margin-bottom:2px}
+  .kd-safe{list-style:none;display:grid;gap:8px;padding:0;font-size:17px}
+  .kd-safe li{padding-left:28px;position:relative}
+  .kd-safe li::before{content:"";position:absolute;left:4px;top:.55em;width:12px;height:12px;border-radius:50%;border:3px solid var(--signal)}
+  .kd-note{margin-top:16px;color:var(--muted);font-size:15px}
+  .kd-sum{margin-top:10px;font-size:13px;color:var(--muted);word-break:break-all}
+  .kd-key{display:inline-block;background:var(--ink);color:var(--paper);border-radius:6px;padding:0 6px;font-weight:800;white-space:nowrap}
+  footer{display:flex;flex-direction:column;gap:6px;padding:40px 0 30px;color:var(--muted);font-size:14px}
+</style>
+<script>
+  // Sitedeki "İndir" linkleri ?yukle=1 ile gelebilir: burada telefon yüklemesi yok, Mac indirmesine kaydır
+  (function () {
+    try {
+      var u = new URL(location.href);
+      if (u.searchParams.has('yukle')) { u.searchParams.delete('yukle'); history.replaceState(null, '', u.href); window.__kdJump = true; }
+    } catch (e) {}
+  })();
+</script>
+<script src="/assets/bk-app.js" data-app="qr-watch" data-name="QR Watch" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="/"><i></i>Berkay Napıyor?</a>
+    <a class="ig" href="https://www.instagram.com/berkay.builds/" target="_blank" rel="noopener">@berkay.builds</a>
+  </header>
+
+  <main class="kd">
+    <section class="kd-hero">
+      <div>
+        <p class="kd-kicker"><span>MAC</span><em>ÜCRETSİZ</em>Saha Testi 004</p>
+        <h1>QR Watch</h1>
+        <p class="lead">Ekranda QR gördüğünde telefonu çıkarma. <span class="kd-key">⇧⌘2</span>'ye bas; QR Watch ekranı tarar, kodu bulur, linki sağ üstte gösterir.</p>
+        <div class="kd-cta" id="indir">
+          <a class="btn signal" id="dl" href="/downloads/QRWatch-1.0.0.dmg" download>Mac için indir</a>
+          <span class="kd-meta">0,5 MB · macOS 14 ve üstü · Apple Silicon ve Intel</span>
+        </div>
+        <div class="kd-mobile" id="mobile" hidden>
+          Bu bir <b>Mac uygulaması</b>. Bilgisayarından <b>berkay.instaassist.tr/qr-watch</b> adresini aç ve oradan indir.
+          <div><button type="button" class="btn small" id="share">Linki kendime gönder</button></div>
+        </div>
+      </div>
+      <div class="kd-video">
+        <video id="vid" src="/assets/apps/qr-watch/qr-watch.mp4" poster="/assets/apps/qr-watch/poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+        <button type="button" class="kd-sound" id="sound">🔊 Sesi aç</button>
+      </div>
+    </section>
+
+    <h2>Kurulum</h2>
+    <ol class="kd-steps">
+      <li><b>İndir, aç.</b>İnen <b>QRWatch-1.0.0.dmg</b> dosyasına çift tıkla. Açılan pencerede <b>QR Watch</b>'ı <b>Uygulamalar</b> klasörüne sürükle.</li>
+      <li><b>İlk açılışta izin ver.</b>Uygulama Apple imzalı olmadığı için macOS "açılmadı" uyarısı verebilir. <b>Bitti</b>'ye bas, sonra <b>Sistem Ayarları › Gizlilik ve Güvenlik</b>'e git; en altta QR Watch için <b>Yine de Aç</b>'a bas. Bunu bir kez yaparsın.</li>
+      <li><b>Ekran izni ver.</b>QR'ı ekranında bulabilmesi için Ekran Kaydı izni ister: <b>Sistem Ayarları'nı Aç</b> › listede <b>QRWatchDesktop</b>'u aç › <b>Çık ve Yeniden Aç</b>. İzin bir kez verilir, hep hatırlanır.</li>
+      <li><b>Hazır.</b>Menü çubuğunda QR simgesi belirir. Taramayı <span class="kd-key">⇧⌘2</span> ile açıp kapatırsın.</li>
+    </ol>
+
+    <h2>Nasıl kullanılır?</h2>
+    <ul class="kd-grid">
+      <li><b>⇧⌘2</b>Taramayı açar. Ekranda bir QR görününce kendisi bulur.</li>
+      <li><b>Open Link</b>Sağ üstte "QR Bulundu" bildirimi çıkar. Linki tarayıcıda açar.</li>
+      <li><b>Copy</b>Linki panoya kopyalar, istediğin yere yapıştırırsın.</li>
+      <li><b>Tekrar ⇧⌘2</b>Taramayı kapatır.</li>
+      <li><b>Kısayolu değiştir</b>Menü çubuğu ikonu › Preferences… Kutuya tıkla, yeni tuşlara bas.</li>
+      <li><b>Mac açılınca başlat</b>Aynı ayarlardan: istersen QR Watch açılışta kendisi başlasın.</li>
+    </ul>
+
+    <h2>Güvenli mi?</h2>
+    <ul class="kd-safe">
+      <li>Ekran görüntüleri yalnızca bellekte işlenir; diske kaydedilmez, internete gönderilmez.</li>
+      <li>Link sen <b>Open Link</b>'e basmadan hiçbir yere gitmez.</li>
+      <li>Hesap yok, kayıt yok, reklam yok.</li>
+    </ul>
+    <p class="kd-sum">Dosya özeti (SHA-256): 2322e6910e8d36b1b89ce2f9b419460a499b60c4c4d75bf40a02d87bd2978111</p>
+    <p class="kd-note">Kaldırmak için QR Watch'ı menü çubuğundaki ikonundan kapat, sonra Uygulamalar klasöründen Çöp Sepeti'ne at.</p>
+  </main>
+
+  <footer>
+    <span>© 2026 Berkay Dilek · İzmir'de yapıldı, sahada test edildi.</span>
+    <span>Çerez yok. İndirmeler isimsiz sayılır.</span>
+  </footer>
+</div>
+<script>
+(function () {
+  var SAYAC = 'https://bk-sayac.berkaydilekk.workers.dev';
+  function count(kind) {
+    try {
+      if (location.hostname !== 'berkay.instaassist.tr' || localStorage.getItem('bk-me')) return;
+      var body = JSON.stringify({ a: 'qr-watch', t: kind });
+      if (navigator.sendBeacon) navigator.sendBeacon(SAYAC + '/e', body);
+    } catch (e) {}
+  }
+  document.getElementById('dl').addEventListener('click', function () { count('download'); });
+
+  var ua = navigator.userAgent || '';
+  var mobile = /iphone|ipad|ipod|android/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (mobile) {
+    document.getElementById('mobile').hidden = false;
+    var sh = document.getElementById('share');
+    sh.addEventListener('click', function () {
+      var url = 'https://berkay.instaassist.tr/qr-watch';
+      if (navigator.share) { navigator.share({ title: 'QR Watch', text: 'Mac için ekrandaki QR okuyucu', url: url }).catch(function () {}); }
+      else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { sh.textContent = 'Kopyalandı'; }); }
+    });
+  }
+  if (window.__kdJump) { var el = document.getElementById('indir'); if (el) el.scrollIntoView({ block: 'center' }); }
+
+  var v = document.getElementById('vid'), b = document.getElementById('sound');
+  b.addEventListener('click', function () {
+    v.muted = !v.muted;
+    if (!v.muted) { v.currentTime = 0; v.play().catch(function () {}); }
+    b.textContent = v.muted ? '🔊 Sesi aç' : '🔇 Sesi kapat';
+  });
+})();
+</script>
+</body>
+</html>
